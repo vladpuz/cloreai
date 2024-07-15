@@ -5,6 +5,7 @@ import { UnknownError } from './errors.js'
 import { type WebOptions } from './types/options.js'
 import { type WebOutput } from './types/output.js'
 import { type WebCreateOrderBody, type WebCreateOrderOutput } from './types/webapi/createOrder.js'
+import { type WebMarketplaceOrdersBody, type WebMarketplaceOrdersOutput } from './types/webapi/marketplaceOrders.js'
 import { type WebMarketplaceServersOutput } from './types/webapi/marketplaceServers.js'
 
 export class WebAPI {
@@ -45,6 +46,11 @@ export class WebAPI {
 
   public async marketplaceServers(): Promise<WebMarketplaceServersOutput> {
     const response = await this.api.post<WebMarketplaceServersOutput>('/marketplace/servers')
+    return response.data
+  }
+
+  public async marketplaceOrders(body: WebMarketplaceOrdersBody): Promise<WebMarketplaceOrdersOutput> {
+    const response = await this.api.post<WebMarketplaceOrdersOutput>('/marketplace/orders', body)
     return response.data
   }
 
