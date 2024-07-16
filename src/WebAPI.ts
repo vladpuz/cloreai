@@ -5,6 +5,7 @@ import { UnknownError } from './errors.js'
 import { getErrorMessage } from './getErrorMessage.js'
 import { type WebOptions } from './types/options.js'
 import { type WebOutput } from './types/output.js'
+import { type WebCancelOrderBody, type WebCancelOrderOutput } from './types/webapi/cancelOrder.js'
 import { type WebCreateOrderBody, type WebCreateOrderOutput } from './types/webapi/createOrder.js'
 import { type WebMarketplaceOrdersBody, type WebMarketplaceOrdersOutput } from './types/webapi/marketplaceOrders.js'
 import { type WebMarketplaceServersOutput } from './types/webapi/marketplaceServers.js'
@@ -51,6 +52,14 @@ export class WebAPI {
     config?: AxiosRequestConfig<WebMarketplaceOrdersBody>,
   ): Promise<WebMarketplaceOrdersOutput> {
     const response = await this.api.post<WebMarketplaceOrdersOutput>('/marketplace/orders', body, config)
+    return response.data
+  }
+
+  public async cancelOrder(
+    body: WebCancelOrderBody,
+    config?: AxiosRequestConfig<WebCancelOrderBody>,
+  ): Promise<WebCancelOrderOutput> {
+    const response = await this.api.post<WebCreateOrderOutput>('/marketplace/cancel_order', body, config)
     return response.data
   }
 
