@@ -1,7 +1,8 @@
-import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 
 import { statusCodes } from './constants.js'
 import { CustomError, DatabaseError, ExceededError, InvalidApiTokenError, InvalidEndpointError, InvalidInputDataError, UnknownError } from './errors.js'
+import { getErrorMessage } from './getErrorMessage.js'
 import { type CancelOrderBody, type CancelOrderOutput } from './types/cloreai/cancelOrder.js'
 import { type CreateOrderBody, type CreateOrderOutput } from './types/cloreai/createOrder.js'
 import { type MarketplaceOutput } from './types/cloreai/marketplace.js'
@@ -35,13 +36,7 @@ export class CloreAI {
         return response
       }
 
-      const statusCodeMessage = response.data.code != null ? `Status code "${response.data.code}".` : null
-      const errorFieldMessage = response.data.error != null ? `Error field "${response.data.error}".` : null
-      const errorMessageArray = [statusCodeMessage, errorFieldMessage].filter((message) => {
-        return message != null
-      })
-
-      const errorMessage = errorMessageArray.join(' ')
+      const errorMessage = getErrorMessage(response.data.code, response.data.error)
 
       switch (response.data.code) {
         case statusCodes['DATABASE_ERROR']:
@@ -62,53 +57,80 @@ export class CloreAI {
     })
   }
 
-  public async wallets(): Promise<WalletsOutput> {
-    const response = await this.api.get<WalletsOutput>('/wallets')
+  public async wallets(
+    config?: AxiosRequestConfig,
+  ): Promise<WalletsOutput> {
+    const response = await this.api.get<WalletsOutput>('/wallets', config)
     return response.data
   }
 
-  public async myServers(): Promise<MyServersOutput> {
-    const response = await this.api.get<MyServersOutput>('/my_servers')
+  public async myServers(
+    config?: AxiosRequestConfig,
+  ): Promise<MyServersOutput> {
+    const response = await this.api.get<MyServersOutput>('/my_servers', config)
     return response.data
   }
 
-  public async serverConfig(body: ServerConfigBody): Promise<ServerConfigOutput> {
-    const response = await this.api.get<ServerConfigOutput>('/server_config', { data: body })
+  public async serverConfig(
+    body: ServerConfigBody,
+    config?: AxiosRequestConfig<ServerConfigBody>,
+  ): Promise<ServerConfigOutput> {
+    const response = await this.api.get<ServerConfigOutput>('/server_config', { ...config, data: body })
     return response.data
   }
 
-  public async marketplace(): Promise<MarketplaceOutput> {
-    const response = await this.api.get<MarketplaceOutput>('/marketplace')
+  public async marketplace(
+    config?: AxiosRequestConfig,
+  ): Promise<MarketplaceOutput> {
+    const response = await this.api.get<MarketplaceOutput>('/marketplace', config)
     return response.data
   }
 
-  public async myOrders(params?: MyOrdersParams): Promise<MyOrdersOutput> {
-    const response = await this.api.get<MyOrdersOutput>('/my_orders', { params })
+  public async myOrders(
+    params?: MyOrdersParams,
+    config?: AxiosRequestConfig,
+  ): Promise<MyOrdersOutput> {
+    const response = await this.api.get<MyOrdersOutput>('/my_orders', { ...config, params })
     return response.data
   }
 
-  public async spotMarketplace(params: SpotMarketplaceParams): Promise<SpotMarketplaceOutput> {
-    const response = await this.api.get<SpotMarketplaceOutput>('/spot_marketplace', { params })
+  public async spotMarketplace(
+    params: SpotMarketplaceParams,
+    config?: AxiosRequestConfig,
+  ): Promise<SpotMarketplaceOutput> {
+    const response = await this.api.get<SpotMarketplaceOutput>('/spot_marketplace', { ...config, params })
     return response.data
   }
 
-  public async setServerSettings(body: SetServerSettingsBody): Promise<SetServerSettingsOutput> {
-    const response = await this.api.post<SetServerSettingsOutput>('/set_server_settings', body)
+  public async setServerSettings(
+    body: SetServerSettingsBody,
+    config?: AxiosRequestConfig<SetServerSettingsBody>,
+  ): Promise<SetServerSettingsOutput> {
+    const response = await this.api.post<SetServerSettingsOutput>('/set_server_settings', body, config)
     return response.data
   }
 
-  public async setSpotPrice(body: SetSpotPriceBody): Promise<SetSpotPriceOutput> {
-    const response = await this.api.post<SetSpotPriceOutput>('/set_spot_price', body)
+  public async setSpotPrice(
+    body: SetSpotPriceBody,
+    config?: AxiosRequestConfig<SetSpotPriceBody>,
+  ): Promise<SetSpotPriceOutput> {
+    const response = await this.api.post<SetSpotPriceOutput>('/set_spot_price', body, config)
     return response.data
   }
 
-  public async cancelOrder(body: CancelOrderBody): Promise<CancelOrderOutput> {
-    const response = await this.api.post<CancelOrderOutput>('/cancel_order', body)
+  public async cancelOrder(
+    body: CancelOrderBody,
+    config?: AxiosRequestConfig<CancelOrderBody>,
+  ): Promise<CancelOrderOutput> {
+    const response = await this.api.post<CancelOrderOutput>('/cancel_order', body, config)
     return response.data
   }
 
-  public async createOrder(body: CreateOrderBody): Promise<CreateOrderOutput> {
-    const response = await this.api.post<CreateOrderOutput>('/create_order', body)
+  public async createOrder(
+    body: CreateOrderBody,
+    config?: AxiosRequestConfig<CreateOrderBody>,
+  ): Promise<CreateOrderOutput> {
+    const response = await this.api.post<CreateOrderOutput>('/create_order', body, config)
     return response.data
   }
 }

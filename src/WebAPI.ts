@@ -1,7 +1,8 @@
-import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 
 import { webStatusCodes } from './constants.js'
 import { UnknownError } from './errors.js'
+import { getErrorMessage } from './getErrorMessage.js'
 import { type WebOptions } from './types/options.js'
 import { type WebOutput } from './types/output.js'
 import { type WebCreateOrderBody, type WebCreateOrderOutput } from './types/webapi/createOrder.js'
@@ -33,29 +34,31 @@ export class WebAPI {
         return response
       }
 
-      const statusCodeMessage = response.data.status != null ? `Status code "${response.data.status}".` : null
-      const errorFieldMessage = response.data.error != null ? `Error field "${response.data.error}".` : null
-      const errorMessageArray = [statusCodeMessage, errorFieldMessage].filter((message) => {
-        return message != null
-      })
-
-      const errorMessage = errorMessageArray.join(' ')
+      const errorMessage = getErrorMessage(response.data.status, response.data.error)
       throw new UnknownError(errorMessage, undefined, response.config, response.request, response)
     })
   }
 
-  public async marketplaceServers(): Promise<WebMarketplaceServersOutput> {
-    const response = await this.api.post<WebMarketplaceServersOutput>('/marketplace/servers')
+  public async marketplaceServers(
+    config?: AxiosRequestConfig,
+  ): Promise<WebMarketplaceServersOutput> {
+    const response = await this.api.post<WebMarketplaceServersOutput>('/marketplace/servers', null, config)
     return response.data
   }
 
-  public async marketplaceOrders(body: WebMarketplaceOrdersBody): Promise<WebMarketplaceOrdersOutput> {
-    const response = await this.api.post<WebMarketplaceOrdersOutput>('/marketplace/orders', body)
+  public async marketplaceOrders(
+    body: WebMarketplaceOrdersBody,
+    config?: AxiosRequestConfig<WebMarketplaceOrdersBody>,
+  ): Promise<WebMarketplaceOrdersOutput> {
+    const response = await this.api.post<WebMarketplaceOrdersOutput>('/marketplace/orders', body, config)
     return response.data
   }
 
-  public async createOrder(body: WebCreateOrderBody): Promise<WebCreateOrderOutput> {
-    const response = await this.api.post<WebCreateOrderOutput>('/create_order', body)
+  public async createOrder(
+    body: WebCreateOrderBody,
+    config?: AxiosRequestConfig<WebCreateOrderBody>,
+  ): Promise<WebCreateOrderOutput> {
+    const response = await this.api.post<WebCreateOrderOutput>('/create_order', body, config)
     return response.data
   }
 }
