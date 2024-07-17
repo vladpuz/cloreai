@@ -13,14 +13,14 @@ import { type SetServerSettingsBody, type SetServerSettingsOutput } from './type
 import { type SetSpotPriceBody, type SetSpotPriceOutput } from './types/cloreai/setSpotPrice.js'
 import { type SpotMarketplaceOutput, type SpotMarketplaceParams } from './types/cloreai/spotMarketplace.js'
 import { type WalletsOutput } from './types/cloreai/wallets.js'
-import { type Options } from './types/options.js'
+import { type Config } from './types/config.js'
 import { type Output } from './types/output.js'
 
 export class CloreAI {
   public readonly api: AxiosInstance
 
-  public constructor(options: Options) {
-    const { apiKey, axiosConfig = {} } = options
+  public constructor(config: Config) {
+    const { apiKey, axiosConfig = {} } = config
 
     this.api = axios.create({
       ...axiosConfig,

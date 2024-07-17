@@ -3,13 +3,13 @@ import { type WebOutput } from '../output.js'
 
 /* Body */
 
-export interface WebMarketplaceOrdersBody {
+export interface WebOrdersBody {
   rc: boolean
 }
 
 /* Output */
 
-export interface WebMarketplaceOrdersOrder {
+export interface WebOrdersOrder {
   id: number
   fee: number
   creation_fee: number
@@ -30,8 +30,8 @@ export interface WebMarketplaceOrdersOrder {
   http_port: string
 }
 
-export interface WebMarketplaceOrdersOutput extends WebOutput {
-  orders: WebMarketplaceOrdersOrder[]
+export interface WebOrdersOutput extends WebOutput {
+  orders: WebOrdersOrder[]
   ol: number
   eo: boolean
   http_endpoint_by_proxy: Record<string, string>

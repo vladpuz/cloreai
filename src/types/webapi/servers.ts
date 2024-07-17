@@ -3,12 +3,12 @@ import { type WebOutput } from '../output.js'
 
 /* Output */
 
-export interface WebMarketplaceServersServerRating {
+export interface WebServersServerRating {
   avg: number
   cnt: number
 }
 
-export interface WebMarketplaceServersServer {
+export interface WebServersServer {
   id: number
   owner: number
   mrl: number
@@ -17,12 +17,12 @@ export interface WebMarketplaceServersServer {
   specs: Specs
   reliability: number
   allowed_coins: Currency[]
-  rating: WebMarketplaceServersServerRating
+  rating: WebServersServerRating
   cuda_version: string
 }
 
-export interface WebMarketplaceServersOutput extends WebOutput {
-  all_servers: WebMarketplaceServersServer[]
+export interface WebServersOutput extends WebOutput {
+  all_servers: WebServersServer[]
   creation_fees: number
   disable_usd: number
   my_servers: number

@@ -3,18 +3,20 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { webStatusCodes } from './constants.js'
 import { UnknownError } from './errors.js'
 import { getErrorMessage } from './getErrorMessage.js'
-import { type WebOptions } from './types/options.js'
+import { type WebConfig } from './types/config.js'
 import { type WebOutput } from './types/output.js'
 import { type WebCancelOrderBody, type WebCancelOrderOutput } from './types/webapi/cancelOrder.js'
 import { type WebCreateOrderBody, type WebCreateOrderOutput } from './types/webapi/createOrder.js'
-import { type WebMarketplaceOrdersBody, type WebMarketplaceOrdersOutput } from './types/webapi/marketplaceOrders.js'
-import { type WebMarketplaceServersOutput } from './types/webapi/marketplaceServers.js'
+import { type WebGetSpotBody, type WebGetSpotOutput } from './types/webapi/getSpot.js'
+import { type WebOrdersBody } from './types/webapi/orders.js'
+import { type WebServersOutput } from './types/webapi/servers.js'
+import { type WebSetSpotPriceBody, type WebSetSpotPriceOutput } from './types/webapi/setSpotPrice.js'
 
 export class WebAPI {
   public readonly api: AxiosInstance
 
-  public constructor(options: WebOptions) {
-    const { token, axiosConfig = {} } = options
+  public constructor(config: WebConfig) {
+    const { token, axiosConfig = {} } = config
 
     this.api = axios.create({
       ...axiosConfig,
@@ -40,18 +42,34 @@ export class WebAPI {
     })
   }
 
-  public async marketplaceServers(
+  public async servers(
     config?: AxiosRequestConfig,
-  ): Promise<WebMarketplaceServersOutput> {
-    const response = await this.api.post<WebMarketplaceServersOutput>('/marketplace/servers', null, config)
+  ): Promise<WebServersOutput> {
+    const response = await this.api.post<WebServersOutput>('/marketplace/servers', null, config)
     return response.data
   }
 
-  public async marketplaceOrders(
-    body: WebMarketplaceOrdersBody,
-    config?: AxiosRequestConfig<WebMarketplaceOrdersBody>,
-  ): Promise<WebMarketplaceOrdersOutput> {
-    const response = await this.api.post<WebMarketplaceOrdersOutput>('/marketplace/orders', body, config)
+  public async orders(
+    body: WebOrdersBody,
+    config?: AxiosRequestConfig<WebOrdersBody>,
+  ): Promise<WebServersOutput> {
+    const response = await this.api.post<WebServersOutput>('/marketplace/orders', body, config)
+    return response.data
+  }
+
+  public async getSpot(
+    body: WebGetSpotBody,
+    config?: AxiosRequestConfig<WebGetSpotBody>,
+  ): Promise<WebGetSpotOutput> {
+    const response = await this.api.post<WebGetSpotOutput>('/marketplace/get_spot', body, config)
+    return response.data
+  }
+
+  public async setSpotPrice(
+    body: WebSetSpotPriceBody,
+    config?: AxiosRequestConfig<WebSetSpotPriceBody>,
+  ): Promise<WebSetSpotPriceOutput> {
+    const response = await this.api.post<WebSetSpotPriceOutput>('/marketplace/set_spot_price', body, config)
     return response.data
   }
 
@@ -59,7 +77,7 @@ export class WebAPI {
     body: WebCancelOrderBody,
     config?: AxiosRequestConfig<WebCancelOrderBody>,
   ): Promise<WebCancelOrderOutput> {
-    const response = await this.api.post<WebCreateOrderOutput>('/marketplace/cancel_order', body, config)
+    const response = await this.api.post<WebCancelOrderOutput>('/marketplace/cancel_order', body, config)
     return response.data
   }
 
