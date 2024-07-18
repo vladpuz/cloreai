@@ -1,6 +1,5 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 
-import { webStatusCodes } from './constants.js'
 import { UnknownError } from './errors.js'
 import { getErrorMessage } from './getErrorMessage.js'
 import { type WebConfig } from './types/config.js'
@@ -33,7 +32,9 @@ export class WebAPI {
     })
 
     this.api.interceptors.response.use((response: AxiosResponse<WebOutput>) => {
-      if (response.data.status === webStatusCodes['NORMAL']) {
+      const hasError = Boolean(response.data.error)
+
+      if (!hasError) {
         return response
       }
 

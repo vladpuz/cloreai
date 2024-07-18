@@ -10,7 +10,3 @@ export const statusCodes: Record<string, number> = {
   EXCEEDED: 5,
   ERROR: 6,
 }
-
-export const webStatusCodes: Record<string, string> = {
-  NORMAL: 'ok',
-}
