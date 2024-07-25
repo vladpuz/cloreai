@@ -1,4 +1,4 @@
-import { type CreateAxiosDefaults } from 'axios'
+import type { CreateAxiosDefaults } from 'axios'
 
 export interface CommonConfig {
   axiosConfig?: CreateAxiosDefaults

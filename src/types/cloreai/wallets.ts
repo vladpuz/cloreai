@@ -1,5 +1,5 @@
-import { type Currency } from '../common.js'
-import { type Output } from '../output.js'
+import type { Currency } from '../common.js'
+import type { Output } from '../output.js'
 
 /* Output */
 

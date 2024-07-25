@@ -1,4 +1,4 @@
-import { type WebOutput } from '../output.js'
+import type { WebOutput } from '../output.js'
 
 /* Body */
 

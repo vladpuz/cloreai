@@ -1,15 +1,16 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 
+import type { WebConfig } from './types/config.js'
+import type { WebOutput } from './types/output.js'
+import type { WebCancelOrderBody, WebCancelOrderOutput } from './types/webapi/cancelOrder.js'
+import type { WebCreateOrderBody, WebCreateOrderOutput } from './types/webapi/createOrder.js'
+import type { WebGetSpotBody, WebGetSpotOutput } from './types/webapi/getSpot.js'
+import type { WebOrdersBody } from './types/webapi/orders.js'
+import type { WebServersOutput } from './types/webapi/servers.js'
+import type { WebSetSpotPriceBody, WebSetSpotPriceOutput } from './types/webapi/setSpotPrice.js'
+
 import { UnknownError } from './errors.js'
 import { getErrorMessage } from './getErrorMessage.js'
-import { type WebConfig } from './types/config.js'
-import { type WebOutput } from './types/output.js'
-import { type WebCancelOrderBody, type WebCancelOrderOutput } from './types/webapi/cancelOrder.js'
-import { type WebCreateOrderBody, type WebCreateOrderOutput } from './types/webapi/createOrder.js'
-import { type WebGetSpotBody, type WebGetSpotOutput } from './types/webapi/getSpot.js'
-import { type WebOrdersBody } from './types/webapi/orders.js'
-import { type WebServersOutput } from './types/webapi/servers.js'
-import { type WebSetSpotPriceBody, type WebSetSpotPriceOutput } from './types/webapi/setSpotPrice.js'
 
 export class WebAPI {
   public readonly api: AxiosInstance

@@ -1,5 +1,5 @@
-import { type Currency, type Specs } from '../common.js'
-import { type Output } from '../output.js'
+import type { Currency, Specs } from '../common.js'
+import type { Output } from '../output.js'
 
 /* Params */
 

@@ -1,5 +1,5 @@
-import { type Pricing, type Specs, type Visibility } from '../common.js'
-import { type Output } from '../output.js'
+import type { Pricing, Specs, Visibility } from '../common.js'
+import type { Output } from '../output.js'
 
 /* Body */
 

@@ -1,20 +1,21 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 
+import type { CancelOrderBody, CancelOrderOutput } from './types/cloreai/cancelOrder.js'
+import type { CreateOrderBody, CreateOrderOutput } from './types/cloreai/createOrder.js'
+import type { MarketplaceOutput } from './types/cloreai/marketplace.js'
+import type { MyOrdersOutput, MyOrdersParams } from './types/cloreai/myOrders.js'
+import type { MyServersOutput } from './types/cloreai/myServers.js'
+import type { ServerConfigBody, ServerConfigOutput } from './types/cloreai/serverConfig.js'
+import type { SetServerSettingsBody, SetServerSettingsOutput } from './types/cloreai/setServerSettings.js'
+import type { SetSpotPriceBody, SetSpotPriceOutput } from './types/cloreai/setSpotPrice.js'
+import type { SpotMarketplaceOutput, SpotMarketplaceParams } from './types/cloreai/spotMarketplace.js'
+import type { WalletsOutput } from './types/cloreai/wallets.js'
+import type { Config } from './types/config.js'
+import type { Output } from './types/output.js'
+
 import { statusCodes } from './constants.js'
 import { CustomError, DatabaseError, ExceededError, InvalidApiTokenError, InvalidEndpointError, InvalidInputDataError, UnknownError } from './errors.js'
 import { getErrorMessage } from './getErrorMessage.js'
-import { type CancelOrderBody, type CancelOrderOutput } from './types/cloreai/cancelOrder.js'
-import { type CreateOrderBody, type CreateOrderOutput } from './types/cloreai/createOrder.js'
-import { type MarketplaceOutput } from './types/cloreai/marketplace.js'
-import { type MyOrdersOutput, type MyOrdersParams } from './types/cloreai/myOrders.js'
-import { type MyServersOutput } from './types/cloreai/myServers.js'
-import { type ServerConfigBody, type ServerConfigOutput } from './types/cloreai/serverConfig.js'
-import { type SetServerSettingsBody, type SetServerSettingsOutput } from './types/cloreai/setServerSettings.js'
-import { type SetSpotPriceBody, type SetSpotPriceOutput } from './types/cloreai/setSpotPrice.js'
-import { type SpotMarketplaceOutput, type SpotMarketplaceParams } from './types/cloreai/spotMarketplace.js'
-import { type WalletsOutput } from './types/cloreai/wallets.js'
-import { type Config } from './types/config.js'
-import { type Output } from './types/output.js'
 
 export class CloreAI {
   public readonly api: AxiosInstance

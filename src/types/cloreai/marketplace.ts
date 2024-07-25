@@ -1,5 +1,5 @@
-import { type Price, type Specs } from '../common.js'
-import { type Output } from '../output.js'
+import type { Price, Specs } from '../common.js'
+import type { Output } from '../output.js'
 
 /* Output */
 

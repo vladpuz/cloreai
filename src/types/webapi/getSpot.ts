@@ -1,5 +1,5 @@
-import { type Currency, type Pricing, type Visibility } from '../common.js'
-import { type WebOutput } from '../output.js'
+import type { Currency, Pricing, Visibility } from '../common.js'
+import type { WebOutput } from '../output.js'
 
 /* Body */
 
