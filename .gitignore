@@ -24,5 +24,12 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# editors
+.vscode
+.idea
+
+# husky
+.husky/_
+
 # playground
 playground
