@@ -1,7 +1,7 @@
 export const GLOBAL_RATE_LIMIT = 1_000
 export const CREATE_ORDER_RATE_LIMIT = 5_000
 
-export const statusCodes: Record<string, number> = {
+export const statusCodes = {
   NORMAL: 0,
   DATABASE_ERROR: 1,
   INVALID_INPUT_DATA: 2,

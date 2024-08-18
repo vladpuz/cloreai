@@ -1,15 +1,15 @@
-import type { Currency, Price, Specs } from '../common.js'
-import type { WebOutput } from '../output.js'
+import type { Currency, Price, Specs } from '../../common/index.js'
+import type { Output } from '../types.js'
 
 /* Body */
 
-export interface WebOrdersBody {
+export interface OrdersBody {
   rc: boolean
 }
 
 /* Output */
 
-export interface WebOrdersOrder {
+export interface OrdersOrder {
   id: number
   fee: number
   creation_fee: number
@@ -30,8 +30,8 @@ export interface WebOrdersOrder {
   http_port: string
 }
 
-export interface WebOrdersOutput extends WebOutput {
-  orders: WebOrdersOrder[]
+export interface OrdersOutput extends Output {
+  orders: OrdersOrder[]
   ol: number
   eo: boolean
   http_endpoint_by_proxy: Record<string, string>

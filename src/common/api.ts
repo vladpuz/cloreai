@@ -1,9 +1,6 @@
 export type OrderType = 'on-demand' | 'spot'
-
 export type Visibility = 'public' | 'hidden'
-
 export type Currency = 'CLORE-Blockchain' | 'bitcoin'
-
 export type Pricing = Record<Currency, number>
 
 export interface Price {

@@ -1,4 +1,4 @@
-import type { Output } from '../output.js'
+import type { Output } from '../types.js'
 
 /* Body */
 
@@ -23,4 +23,7 @@ export interface SetSpotPriceSuccess extends Output {
   error: undefined
 }
 
-export type SetSpotPriceOutput = SetSpotPriceMaxStep | SetSpotPriceTimeToLowering | SetSpotPriceSuccess
+export type SetSpotPriceOutput =
+  | SetSpotPriceMaxStep
+  | SetSpotPriceTimeToLowering
+  | SetSpotPriceSuccess

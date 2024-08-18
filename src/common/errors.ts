@@ -1,6 +1,6 @@
 import { AxiosError } from 'axios'
 
-export type AxiosErrorParameters = ConstructorParameters<typeof AxiosError>
+import type { AxiosErrorParameters } from './types.js'
 
 export class DatabaseError extends AxiosError {
   public constructor(...args: AxiosErrorParameters) {

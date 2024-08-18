@@ -1,14 +1,14 @@
-import type { Currency, Price, Specs } from '../common.js'
-import type { WebOutput } from '../output.js'
+import type { Currency, Price, Specs } from '../../common/index.js'
+import type { Output } from '../types.js'
 
 /* Output */
 
-export interface WebServersServerRating {
+export interface ServersServerRating {
   avg: number
   cnt: number
 }
 
-export interface WebServersServer {
+export interface ServersServer {
   id: number
   owner: number
   mrl: number
@@ -17,12 +17,12 @@ export interface WebServersServer {
   specs: Specs
   reliability: number
   allowed_coins: Currency[]
-  rating: WebServersServerRating
+  rating: ServersServerRating
   cuda_version: string
 }
 
-export interface WebServersOutput extends WebOutput {
-  all_servers: WebServersServer[]
+export interface ServersOutput extends Output {
+  all_servers: ServersServer[]
   creation_fees: number
   disable_usd: number
   my_servers: number

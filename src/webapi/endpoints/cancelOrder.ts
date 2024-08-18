@@ -1,10 +1,10 @@
-import type { Output } from '../output.js'
+import type { Output } from '../types.js'
 
 /* Body */
 
 export interface CancelOrderBody {
   id: number
-  issue?: string
+  rating: number
 }
 
 /* Output */
