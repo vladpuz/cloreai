@@ -15,6 +15,7 @@ export interface CreateOrderCommon {
   command?: string
   required_price?: number
   autossh_entrypoint?: boolean
+  remember_password?: boolean
 }
 
 export interface CreateOrderOnDemand extends CreateOrderCommon {

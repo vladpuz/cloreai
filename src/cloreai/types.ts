@@ -4,6 +4,6 @@ export interface Config extends CommonConfig {
   apiKey: string
 }
 
-export interface Output<T = string> extends CommonOutput<T> {
+export interface Output extends CommonOutput {
   code: number
 }
