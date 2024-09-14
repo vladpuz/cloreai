@@ -1,5 +1,5 @@
-export const GLOBAL_RATE_LIMIT = 1_000
-export const CREATE_ORDER_RATE_LIMIT = 5_000
+export const RATE_LIMIT = 1_000
+export const RATE_LIMIT_CREATE_ORDER = 5_000
 
 export const statusCodes = {
   NORMAL: 0,

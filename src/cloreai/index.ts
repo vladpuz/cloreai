@@ -1,4 +1,5 @@
-export { CloreAI as default } from './CloreAI.js'
+import CloreAI from './CloreAI.js'
+
 export * from './endpoints/cancelOrder.js'
 export * from './endpoints/createOrder.js'
 export * from './endpoints/marketplace.js'
@@ -10,3 +11,5 @@ export * from './endpoints/setSpotPrice.js'
 export * from './endpoints/spotMarketplace.js'
 export * from './endpoints/wallets.js'
 export * from './types.js'
+
+export default CloreAI
