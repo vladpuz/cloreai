@@ -10,10 +10,16 @@ import type { SetSpotPriceBody, SetSpotPriceOutput } from './endpoints/setSpotPr
 import type { Config, Output } from './types.js'
 
 import { UnknownError } from '../common/errors.js'
-import { getErrorMessage, RATE_LIMIT_CREATE_ORDER } from '../common/index.js'
+import { getErrorMessage, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER } from '../common/index.js'
 
 class WebAPI {
   public readonly axios: AxiosInstance
+
+  public readonly rateLimitQueue: PQueue = new PQueue({
+    interval: RATE_LIMIT,
+    intervalCap: 1,
+    concurrency: 1,
+  })
 
   public readonly rateLimitCreateOrderQueue: PQueue = new PQueue({
     interval: RATE_LIMIT_CREATE_ORDER,
@@ -62,40 +68,60 @@ class WebAPI {
 
   public async servers(
     axiosConfig?: AxiosRequestConfig,
+    queueOptions?: QueueAddOptions,
   ): Promise<ServersOutput> {
-    const response = await this.axios.post<ServersOutput>('/marketplace/servers', null, axiosConfig)
+    const response = await this.rateLimitQueue.add(async () => {
+      return await this.axios.post<ServersOutput>('/marketplace/servers', null, axiosConfig)
+    }, { ...queueOptions, throwOnTimeout: true })
+
     return response.data
   }
 
   public async orders(
     body: OrdersBody,
     axiosConfig?: AxiosRequestConfig<OrdersBody>,
+    queueOptions?: QueueAddOptions,
   ): Promise<OrdersOutput> {
-    const response = await this.axios.post<OrdersOutput>('/marketplace/orders', body, axiosConfig)
+    const response = await this.rateLimitQueue.add(async () => {
+      return await this.axios.post<OrdersOutput>('/marketplace/orders', body, axiosConfig)
+    }, { ...queueOptions, throwOnTimeout: true })
+
     return response.data
   }
 
   public async getSpot(
     body: GetSpotBody,
     axiosConfig?: AxiosRequestConfig<GetSpotBody>,
+    queueOptions?: QueueAddOptions,
   ): Promise<GetSpotOutput> {
-    const response = await this.axios.post<GetSpotOutput>('/marketplace/get_spot', body, axiosConfig)
+    const response = await this.rateLimitQueue.add(async () => {
+      return await this.axios.post<GetSpotOutput>('/marketplace/get_spot', body, axiosConfig)
+    }, { ...queueOptions, throwOnTimeout: true })
+
     return response.data
   }
 
   public async setSpotPrice(
     body: SetSpotPriceBody,
     axiosConfig?: AxiosRequestConfig<SetSpotPriceBody>,
+    queueOptions?: QueueAddOptions,
   ): Promise<SetSpotPriceOutput> {
-    const response = await this.axios.post<SetSpotPriceOutput>('/marketplace/set_spot_price', body, axiosConfig)
+    const response = await this.rateLimitQueue.add(async () => {
+      return await this.axios.post<SetSpotPriceOutput>('/marketplace/set_spot_price', body, axiosConfig)
+    }, { ...queueOptions, throwOnTimeout: true })
+
     return response.data
   }
 
   public async cancelOrder(
     body: CancelOrderBody,
     axiosConfig?: AxiosRequestConfig<CancelOrderBody>,
+    queueOptions?: QueueAddOptions,
   ): Promise<CancelOrderOutput> {
-    const response = await this.axios.post<CancelOrderOutput>('/marketplace/cancel_order', body, axiosConfig)
+    const response = await this.rateLimitQueue.add(async () => {
+      return await this.axios.post<CancelOrderOutput>('/marketplace/cancel_order', body, axiosConfig)
+    }, { ...queueOptions, throwOnTimeout: true })
+
     return response.data
   }
 
@@ -104,8 +130,18 @@ class WebAPI {
     axiosConfig?: AxiosRequestConfig<CreateOrderBody>,
     queueOptions?: QueueAddOptions,
   ): Promise<CreateOrderOutput> {
-    const response = await this.rateLimitCreateOrderQueue.add(async () => {
-      return await this.axios.post<CreateOrderOutput>('/create_order', body, axiosConfig)
+    const response = await this.rateLimitQueue.add(async () => {
+      this.rateLimitQueue.pause()
+
+      try {
+        return await this.rateLimitCreateOrderQueue.add(async () => {
+          return await this.axios.post<CreateOrderOutput>('/create_order', body, axiosConfig)
+        }, { ...queueOptions, throwOnTimeout: true })
+      } finally {
+        setTimeout(() => {
+          this.rateLimitQueue.start()
+        }, RATE_LIMIT)
+      }
     }, { ...queueOptions, throwOnTimeout: true })
 
     return response.data

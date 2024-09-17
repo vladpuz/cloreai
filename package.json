@@ -1,6 +1,6 @@
 {
   "name": "cloreai",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "type": "module",
   "description": "CLORE.AI API client",
   "repository": {

@@ -1,9 +1,10 @@
-import type { Currency } from '../../common/index.js'
+import type { Currency, OrderType } from '../../common/index.js'
 import type { Output } from '../types.js'
 
 /* Body */
 
 export interface CreateOrderCommon {
+  type: OrderType
   currency: Currency
   image: string
   renting_server: number
