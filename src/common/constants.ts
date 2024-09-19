@@ -1,4 +1,4 @@
-export const RATE_LIMIT = 1_000
+export const RATE_LIMIT = 3_000
 export const RATE_LIMIT_CREATE_ORDER = 5_000
 
 export const statusCodes = {
