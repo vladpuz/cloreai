@@ -1,209 +1,194 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
-import PQueue, { type QueueAddOptions } from 'p-queue'
+import PQueue from 'p-queue'
 
-import type { AxiosErrorParameters } from '../common/types.js'
-import type { CancelOrderBody, CancelOrderOutput } from './endpoints/cancelOrder.js'
-import type { CreateOrderBody, CreateOrderOutput } from './endpoints/createOrder.js'
-import type { MarketplaceOutput } from './endpoints/marketplace.js'
-import type { MyOrdersOutput, MyOrdersParams } from './endpoints/myOrders.js'
-import type { MyServersOutput } from './endpoints/myServers.js'
-import type { ServerConfigBody, ServerConfigOutput } from './endpoints/serverConfig.js'
-import type { SetServerSettingsBody, SetServerSettingsOutput } from './endpoints/setServerSettings.js'
-import type { SetSpotPriceBody, SetSpotPriceOutput } from './endpoints/setSpotPrice.js'
-import type { SpotMarketplaceOutput, SpotMarketplaceParams } from './endpoints/spotMarketplace.js'
-import type { WalletsOutput } from './endpoints/wallets.js'
-import type { Config, Output } from './types.js'
+import type { CancelOrderRequestData, CancelOrderResponseData } from './endpoints/cancelOrder.js'
+import type { CreateOrderRequestData, CreateOrderResponseData } from './endpoints/createOrder.js'
+import type { MarketplaceResponseData } from './endpoints/marketplace.js'
+import type { MyOrdersRequestParams, MyOrdersResponseData } from './endpoints/myOrders.js'
+import type { MyServersResponseData } from './endpoints/myServers.js'
+import type { ServerConfigRequestData, ServerConfigResponseData } from './endpoints/serverConfig.js'
+import type { SetServerSettingsRequestData, SetServerSettingsResponseData } from './endpoints/setServerSettings.js'
+import type { SetSpotPriceRequestData, SetSpotPriceResponseData } from './endpoints/setSpotPrice.js'
+import type { SpotMarketplaceRequestParams, SpotMarketplaceResponseData } from './endpoints/spotMarketplace.js'
+import type { WalletsResponseData } from './endpoints/wallets.js'
+import type { Config, ResponseData } from './types.js'
 
-import { CustomError, DatabaseError, ExceededError, InvalidApiTokenError, InvalidEndpointError, InvalidInputDataError, UnknownError } from '../common/errors.js'
-import { getErrorMessage, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER, statusCodes } from '../common/index.js'
+import { priorityLevels, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER, statusCodes } from '../common/constants.js'
+import { type AxiosErrorParameters, DatabaseError, ExceededError, InvalidApiTokenError, InvalidEndpointError, InvalidInputDataError, OtherError, UnknownError } from '../common/errors.js'
+import { getErrorMessage, getQueueOptions } from '../common/helpers.js'
 
 class CloreAI {
-  public readonly axios: AxiosInstance
-
-  public readonly rateLimitQueue: PQueue = new PQueue({
-    interval: RATE_LIMIT,
-    intervalCap: 1,
-    concurrency: 1,
-  })
-
-  public readonly rateLimitCreateOrderQueue: PQueue = new PQueue({
-    interval: RATE_LIMIT_CREATE_ORDER,
-    intervalCap: 1,
-    concurrency: 1,
-  })
+  public axios: AxiosInstance
+  public rateLimitQueue: PQueue
+  public rateLimitQueueCreateOrder: PQueue
 
   public constructor(config: Config) {
-    const { apiKey, axiosConfig = {} } = config
+    this.rateLimitQueue = new PQueue({
+      interval: RATE_LIMIT,
+      intervalCap: 1,
+      concurrency: 1,
+      ...config.rateLimitQueueOptions,
+    })
+
+    this.rateLimitQueueCreateOrder = new PQueue({
+      interval: RATE_LIMIT_CREATE_ORDER,
+      intervalCap: 1,
+      concurrency: 1,
+      ...config.rateLimitQueueOptionsCreateOrder,
+    })
 
     this.axios = axios.create({
-      ...axiosConfig,
+      ...config.axiosConfig,
       baseURL: 'https://api.clore.ai/v1',
-      headers: {
-        ...axiosConfig.headers,
-        auth: apiKey,
+    })
+
+    this.axios.interceptors.request.use((request) => {
+      request.headers.set('auth', config.apiKey)
+      return request
+    })
+
+    this.axios.interceptors.response.use(
+      (response: AxiosResponse<ResponseData>) => {
+        if (response.data.code === statusCodes.NORMAL) {
+          return response
+        }
+
+        const errorMessage = getErrorMessage(
+          response.data.code,
+          response.data.error,
+        )
+
+        const axiosErrorParameters: AxiosErrorParameters = [
+          errorMessage,
+          undefined,
+          response.config,
+          response.request,
+          response,
+        ]
+
+        switch (response.data.code) {
+          case statusCodes.DATABASE_ERROR:
+            throw new DatabaseError(...axiosErrorParameters)
+          case statusCodes.INVALID_INPUT_DATA:
+            throw new InvalidInputDataError(...axiosErrorParameters)
+          case statusCodes.INVALID_API_TOKEN:
+            throw new InvalidApiTokenError(...axiosErrorParameters)
+          case statusCodes.INVALID_ENDPOINT:
+            throw new InvalidEndpointError(...axiosErrorParameters)
+          case statusCodes.EXCEEDED:
+            throw new ExceededError(...axiosErrorParameters)
+          case statusCodes.OTHER:
+            throw new OtherError(...axiosErrorParameters)
+          default:
+            throw new UnknownError(...axiosErrorParameters)
+        }
       },
-    })
-
-    this.axios.interceptors.response.use((response: AxiosResponse<Output>) => {
-      if (response.data.code === statusCodes.NORMAL) {
-        return response
-      }
-
-      const errorMessage = getErrorMessage(
-        response.data.code,
-        response.data.error,
-      )
-
-      const axiosErrorParameters: AxiosErrorParameters = [
-        errorMessage,
-        undefined,
-        response.config,
-        response.request,
-        response,
-      ]
-
-      switch (response.data.code) {
-        case statusCodes.DATABASE_ERROR:
-          throw new DatabaseError(...axiosErrorParameters)
-        case statusCodes.INVALID_INPUT_DATA:
-          throw new InvalidInputDataError(...axiosErrorParameters)
-        case statusCodes.INVALID_API_TOKEN:
-          throw new InvalidApiTokenError(...axiosErrorParameters)
-        case statusCodes.INVALID_ENDPOINT:
-          throw new InvalidEndpointError(...axiosErrorParameters)
-        case statusCodes.EXCEEDED:
-          throw new ExceededError(...axiosErrorParameters)
-        case statusCodes.ERROR:
-          throw new CustomError(...axiosErrorParameters)
-        default:
-          throw new UnknownError(...axiosErrorParameters)
-      }
-    })
+    )
   }
 
   public async wallets(
-    axiosConfig?: AxiosRequestConfig,
-    queueOptions?: QueueAddOptions,
-  ): Promise<WalletsOutput> {
+    config?: AxiosRequestConfig,
+  ): Promise<WalletsResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.get<WalletsOutput>('/wallets', axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.get<WalletsResponseData>('/wallets', config)
+    }, getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
 
   public async myServers(
-    axiosConfig?: AxiosRequestConfig,
-    queueOptions?: QueueAddOptions,
-  ): Promise<MyServersOutput> {
+    config?: AxiosRequestConfig,
+  ): Promise<MyServersResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.get<MyServersOutput>('/my_servers', axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.get<MyServersResponseData>('/my_servers', config)
+    }, getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
 
   public async serverConfig(
-    body: ServerConfigBody,
-    axiosConfig?: AxiosRequestConfig<ServerConfigBody>,
-    queueOptions?: QueueAddOptions,
-  ): Promise<ServerConfigOutput> {
+    data: ServerConfigRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<ServerConfigResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.get<ServerConfigOutput>('/server_config', { ...axiosConfig, data: body })
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.get<ServerConfigResponseData>('/server_config', { ...config, data })
+    }, getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
 
   public async marketplace(
-    axiosConfig?: AxiosRequestConfig,
-    queueOptions?: QueueAddOptions,
-  ): Promise<MarketplaceOutput> {
+    config?: AxiosRequestConfig,
+  ): Promise<MarketplaceResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.get<MarketplaceOutput>('/marketplace', axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.get<MarketplaceResponseData>('/marketplace', config)
+    }, getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
 
   public async myOrders(
-    params?: MyOrdersParams,
-    axiosConfig?: AxiosRequestConfig,
-    queueOptions?: QueueAddOptions,
-  ): Promise<MyOrdersOutput> {
+    params: MyOrdersRequestParams,
+    config?: AxiosRequestConfig,
+  ): Promise<MyOrdersResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.get<MyOrdersOutput>('/my_orders', { ...axiosConfig, params })
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.get<MyOrdersResponseData>('/my_orders', { ...config, params })
+    }, getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
 
   public async spotMarketplace(
-    params: SpotMarketplaceParams,
-    axiosConfig?: AxiosRequestConfig,
-    queueOptions?: QueueAddOptions,
-  ): Promise<SpotMarketplaceOutput> {
+    params: SpotMarketplaceRequestParams,
+    config?: AxiosRequestConfig,
+  ): Promise<SpotMarketplaceResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.get<SpotMarketplaceOutput>('/spot_marketplace', { ...axiosConfig, params })
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.get<SpotMarketplaceResponseData>('/spot_marketplace', { ...config, params })
+    }, getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
 
   public async setServerSettings(
-    body: SetServerSettingsBody,
-    axiosConfig?: AxiosRequestConfig<SetServerSettingsBody>,
-    queueOptions?: QueueAddOptions,
-  ): Promise<SetServerSettingsOutput> {
+    data: SetServerSettingsRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<SetServerSettingsResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.post<SetServerSettingsOutput>('/set_server_settings', body, axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.post<SetServerSettingsResponseData>('/set_server_settings', data, config)
+    }, getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }
 
   public async setSpotPrice(
-    body: SetSpotPriceBody,
-    axiosConfig?: AxiosRequestConfig<SetSpotPriceBody>,
-    queueOptions?: QueueAddOptions,
-  ): Promise<SetSpotPriceOutput> {
+    data: SetSpotPriceRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<SetSpotPriceResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.post<SetSpotPriceOutput>('/set_spot_price', body, axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.post<SetSpotPriceResponseData>('/set_spot_price', data, config)
+    }, getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }
 
   public async cancelOrder(
-    body: CancelOrderBody,
-    axiosConfig?: AxiosRequestConfig<CancelOrderBody>,
-    queueOptions?: QueueAddOptions,
-  ): Promise<CancelOrderOutput> {
+    data: CancelOrderRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<CancelOrderResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.post<CancelOrderOutput>('/cancel_order', body, axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.post<CancelOrderResponseData>('/cancel_order', data, config)
+    }, getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }
 
   public async createOrder(
-    body: CreateOrderBody,
-    axiosConfig?: AxiosRequestConfig<CreateOrderBody>,
-    queueOptions?: QueueAddOptions,
-  ): Promise<CreateOrderOutput> {
-    const response = await this.rateLimitQueue.add(async () => {
-      this.rateLimitQueue.pause()
-
-      try {
-        return await this.rateLimitCreateOrderQueue.add(async () => {
-          return await this.axios.post<CreateOrderOutput>('/create_order', body, axiosConfig)
-        }, { ...queueOptions, throwOnTimeout: true })
-      } finally {
-        setTimeout(() => {
-          this.rateLimitQueue.start()
-        }, RATE_LIMIT)
-      }
-    }, { ...queueOptions, throwOnTimeout: true })
+    data: CreateOrderRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<CreateOrderResponseData> {
+    const response = await this.rateLimitQueueCreateOrder.add(async () => {
+      return await this.axios.post<CreateOrderResponseData>('/create_order', data, config)
+    }, getQueueOptions(priorityLevels.HIGHEST, config))
 
     return response.data
   }

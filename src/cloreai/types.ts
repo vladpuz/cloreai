@@ -1,9 +1,9 @@
-import type { CommonConfig, CommonOutput } from '../common/types.js'
+import type { CommonConfig, CommonResponseData } from '../common/types.js'
 
 export interface Config extends CommonConfig {
   apiKey: string
 }
 
-export interface Output extends CommonOutput {
+export interface ResponseData extends CommonResponseData {
   code: number
 }

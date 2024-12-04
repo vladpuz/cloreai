@@ -1,35 +1,15 @@
-import type { Currency, Specs } from '../../common/index.js'
-import type { Output } from '../types.js'
+import type { MyOrdersResponseDataOrderCommon } from '../../common/endpoints/myOrders.js'
+import type { ResponseData } from '../types.js'
 
-/* Params */
+/* RequestParams */
 
-export interface MyOrdersParams {
+export interface MyOrdersRequestParams {
   return_completed?: boolean
 }
 
-/* Output */
+/* ResponseData */
 
-export interface MyOrdersOrder {
-  id: number
-  fee: number
-  creation_fee: number
-  price: number
-  mrl: number
-  image: string
-  currency: Currency
-  spend: number
-  ct: number
-  p: number
-  specs: Specs
-  si: number
-  pub_cluster: string[]
-  tcp_ports: string[]
-  http_port: string
-  spot: boolean
-  expired: boolean
-}
-
-export interface MyOrdersOutput extends Output {
-  orders: MyOrdersOrder[]
+export interface MyOrdersResponseData extends ResponseData {
+  orders: MyOrdersResponseDataOrderCommon[]
   limit: number
 }

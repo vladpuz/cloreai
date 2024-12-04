@@ -1,29 +1,12 @@
-import type { Output } from '../types.js'
+import type { SetSpotPriceRequestDataCommon, SetSpotPriceResponseDataCommon } from '../../common/endpoints/setSpotPrice.js'
+import type { ResponseData } from '../types.js'
 
-/* Body */
+/* RequestData */
 
-export interface SetSpotPriceBody {
-  desired_price: number
-  order_id: number
-}
+export type SetSpotPriceRequestData = SetSpotPriceRequestDataCommon
 
-/* Output */
+/* ResponseData */
 
-export interface SetSpotPriceMaxStep extends Output {
-  error: 'exceeded_max_step'
-  max_step: number
-}
-
-export interface SetSpotPriceTimeToLowering extends Output {
-  error: 'can_lower_every_600_seconds'
-  time_to_lowering: number
-}
-
-export interface SetSpotPriceSuccess extends Output {
-  error: undefined
-}
-
-export type SetSpotPriceOutput =
-  | SetSpotPriceMaxStep
-  | SetSpotPriceTimeToLowering
-  | SetSpotPriceSuccess
+export type SetSpotPriceResponseData =
+  & SetSpotPriceResponseDataCommon
+  & ResponseData

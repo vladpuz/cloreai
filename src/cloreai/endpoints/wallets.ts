@@ -1,15 +1,15 @@
-import type { Currency } from '../../common/index.js'
-import type { Output } from '../types.js'
+import type { Currency } from '../../common/types.js'
+import type { ResponseData } from '../types.js'
 
-/* Output */
+/* ResponseData */
 
-export interface WalletsWallet {
+export interface WalletsResponseDataWallet {
   name: Currency
   deposit: string
   balance: number
   withdrawal_fee: number
 }
 
-export interface WalletsOutput extends Output {
-  wallets: WalletsWallet[]
+export interface WalletsResponseData extends ResponseData {
+  wallets: WalletsResponseDataWallet[]
 }

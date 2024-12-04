@@ -1,148 +1,137 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
-import PQueue, { type QueueAddOptions } from 'p-queue'
+import PQueue from 'p-queue'
 
-import type { CancelOrderBody, CancelOrderOutput } from './endpoints/cancelOrder.js'
-import type { CreateOrderBody, CreateOrderOutput } from './endpoints/createOrder.js'
-import type { GetSpotBody, GetSpotOutput } from './endpoints/getSpot.js'
-import type { OrdersBody, OrdersOutput } from './endpoints/orders.js'
-import type { ServersOutput } from './endpoints/servers.js'
-import type { SetSpotPriceBody, SetSpotPriceOutput } from './endpoints/setSpotPrice.js'
-import type { Config, Output } from './types.js'
+import type { CancelOrderRequestData, CancelOrderResponseData } from './endpoints/cancelOrder.js'
+import type { CreateOrderRequestData, CreateOrderResponseData } from './endpoints/createOrder.js'
+import type { MarketplaceResponseData } from './endpoints/marketplace.js'
+import type { MyOrdersRequestData, MyOrdersResponseData } from './endpoints/myOrders.js'
+import type { SetSpotPriceRequestData, SetSpotPriceResponseData } from './endpoints/setSpotPrice.js'
+import type { SpotMarketplaceRequestData, SpotMarketplaceResponseData } from './endpoints/spotMarketplace.js'
+import type { Config, ResponseData } from './types.js'
 
+import { priorityLevels, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER } from '../common/constants.js'
 import { UnknownError } from '../common/errors.js'
-import { getErrorMessage, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER } from '../common/index.js'
+import { getErrorMessage, getQueueOptions } from '../common/helpers.js'
 
 class WebAPI {
-  public readonly axios: AxiosInstance
-
-  public readonly rateLimitQueue: PQueue = new PQueue({
-    interval: RATE_LIMIT,
-    intervalCap: 1,
-    concurrency: 1,
-  })
-
-  public readonly rateLimitCreateOrderQueue: PQueue = new PQueue({
-    interval: RATE_LIMIT_CREATE_ORDER,
-    intervalCap: 1,
-    concurrency: 1,
-  })
+  public axios: AxiosInstance
+  public rateLimitQueue: PQueue
+  public rateLimitQueueCreateOrder: PQueue
 
   public constructor(config: Config) {
-    const { token, axiosConfig = {} } = config
+    this.rateLimitQueue = new PQueue({
+      interval: RATE_LIMIT,
+      intervalCap: 1,
+      concurrency: 1,
+      ...config.rateLimitQueueOptions,
+    })
+
+    this.rateLimitQueueCreateOrder = new PQueue({
+      interval: RATE_LIMIT_CREATE_ORDER,
+      intervalCap: 1,
+      concurrency: 1,
+      ...config.rateLimitQueueOptionsCreateOrder,
+    })
 
     this.axios = axios.create({
-      ...axiosConfig,
+      ...config.axiosConfig,
       baseURL: 'https://clore.ai/webapi',
     })
 
     this.axios.interceptors.request.use((request) => {
-      request.data = {
+      (request.data as unknown) = {
         ...request.data,
-        token,
+        token: config.token,
       }
 
       return request
     })
 
-    this.axios.interceptors.response.use((response: AxiosResponse<Output>) => {
-      const hasError = Boolean(response.data.error)
+    this.axios.interceptors.response.use(
+      (response: AxiosResponse<ResponseData>) => {
+        const hasError = Boolean(response.data.error)
 
-      if (!hasError) {
-        return response
-      }
+        if (!hasError) {
+          return response
+        }
 
-      const errorMessage = getErrorMessage(
-        response.data.status,
-        response.data.error,
-      )
+        const errorMessage = getErrorMessage(
+          response.data.status,
+          response.data.error,
+        )
 
-      throw new UnknownError(
-        errorMessage,
-        undefined,
-        response.config,
-        response.request,
-        response,
-      )
-    })
+        throw new UnknownError(
+          errorMessage,
+          undefined,
+          response.config,
+          response.request,
+          response,
+        )
+      },
+    )
   }
 
-  public async servers(
-    axiosConfig?: AxiosRequestConfig,
-    queueOptions?: QueueAddOptions,
-  ): Promise<ServersOutput> {
+  public async marketplace(
+    config?: AxiosRequestConfig,
+  ): Promise<MarketplaceResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.post<ServersOutput>('/marketplace/servers', null, axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.post<MarketplaceResponseData>('/marketplace/servers', null, config)
+    }, getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
 
-  public async orders(
-    body: OrdersBody,
-    axiosConfig?: AxiosRequestConfig<OrdersBody>,
-    queueOptions?: QueueAddOptions,
-  ): Promise<OrdersOutput> {
+  public async myOrders(
+    data: MyOrdersRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<MyOrdersResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.post<OrdersOutput>('/marketplace/orders', body, axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.post<MyOrdersResponseData>('/marketplace/orders', data, config)
+    }, getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
 
-  public async getSpot(
-    body: GetSpotBody,
-    axiosConfig?: AxiosRequestConfig<GetSpotBody>,
-    queueOptions?: QueueAddOptions,
-  ): Promise<GetSpotOutput> {
+  public async spotMarketplace(
+    data: SpotMarketplaceRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<SpotMarketplaceResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.post<GetSpotOutput>('/marketplace/get_spot', body, axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.post<SpotMarketplaceResponseData>('/marketplace/get_spot', data, config)
+    }, getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
 
   public async setSpotPrice(
-    body: SetSpotPriceBody,
-    axiosConfig?: AxiosRequestConfig<SetSpotPriceBody>,
-    queueOptions?: QueueAddOptions,
-  ): Promise<SetSpotPriceOutput> {
+    data: SetSpotPriceRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<SetSpotPriceResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.post<SetSpotPriceOutput>('/marketplace/set_spot_price', body, axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.post<SetSpotPriceResponseData>('/marketplace/set_spot_price', data, config)
+    }, getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }
 
   public async cancelOrder(
-    body: CancelOrderBody,
-    axiosConfig?: AxiosRequestConfig<CancelOrderBody>,
-    queueOptions?: QueueAddOptions,
-  ): Promise<CancelOrderOutput> {
+    data: CancelOrderRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<CancelOrderResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
-      return await this.axios.post<CancelOrderOutput>('/marketplace/cancel_order', body, axiosConfig)
-    }, { ...queueOptions, throwOnTimeout: true })
+      return await this.axios.post<CancelOrderResponseData>('/marketplace/cancel_order', data, config)
+    }, getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }
 
   public async createOrder(
-    body: CreateOrderBody,
-    axiosConfig?: AxiosRequestConfig<CreateOrderBody>,
-    queueOptions?: QueueAddOptions,
-  ): Promise<CreateOrderOutput> {
-    const response = await this.rateLimitQueue.add(async () => {
-      this.rateLimitQueue.pause()
-
-      try {
-        return await this.rateLimitCreateOrderQueue.add(async () => {
-          return await this.axios.post<CreateOrderOutput>('/create_order', body, axiosConfig)
-        }, { ...queueOptions, throwOnTimeout: true })
-      } finally {
-        setTimeout(() => {
-          this.rateLimitQueue.start()
-        }, RATE_LIMIT)
-      }
-    }, { ...queueOptions, throwOnTimeout: true })
+    data: CreateOrderRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<CreateOrderResponseData> {
+    const response = await this.rateLimitQueueCreateOrder.add(async () => {
+      return await this.axios.post<CreateOrderResponseData>('/create_order', data, config)
+    }, getQueueOptions(priorityLevels.HIGHEST, config))
 
     return response.data
   }

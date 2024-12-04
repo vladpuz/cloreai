@@ -1,11 +1,11 @@
 import WebAPI from './WebAPI.js'
 
-export * from './endpoints/cancelOrder.js'
-export * from './endpoints/createOrder.js'
-export * from './endpoints/getSpot.js'
-export * from './endpoints/orders.js'
-export * from './endpoints/servers.js'
-export * from './endpoints/setSpotPrice.js'
-export * from './types.js'
+export type * from './endpoints/cancelOrder.js'
+export type * from './endpoints/createOrder.js'
+export type * from './endpoints/marketplace.js'
+export type * from './endpoints/myOrders.js'
+export type * from './endpoints/setSpotPrice.js'
+export type * from './endpoints/spotMarketplace.js'
+export type * from './types.js'
 
 export default WebAPI

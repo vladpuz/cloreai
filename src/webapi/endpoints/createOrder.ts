@@ -1,37 +1,10 @@
-import type { Currency, OrderType } from '../../common/index.js'
-import type { Output } from '../types.js'
+import type { CreateOrderRequestDataCommon } from '../../common/endpoints/createOrder.js'
+import type { ResponseData } from '../types.js'
 
-/* Body */
+/* RequestData */
 
-export interface CreateOrderCommon {
-  type: OrderType
-  currency: Currency
-  image: string
-  renting_server: number
-  ports?: Record<string, string>
-  env?: Record<string, string>
-  jupyter_token?: string
-  ssh_key?: string
-  ssh_password?: string
-  command?: string
-  required_price?: number
-  autossh_entrypoint?: boolean
-  remember_password?: boolean
-}
+export type CreateOrderRequestData = CreateOrderRequestDataCommon
 
-export interface CreateOrderOnDemand extends CreateOrderCommon {
-  type: 'on-demand'
-}
+/* ResponseData */
 
-export interface CreateOrderSpot extends CreateOrderCommon {
-  type: 'spot'
-  spotprice: number
-}
-
-export type CreateOrderBody = CreateOrderOnDemand | CreateOrderSpot
-
-/* Output */
-
-export interface CreateOrderOutput extends Output {
-
-}
+export type CreateOrderResponseData = ResponseData

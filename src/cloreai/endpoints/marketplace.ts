@@ -1,18 +1,9 @@
-import type { Price, Specs } from '../../common/index.js'
-import type { Output } from '../types.js'
+import type { MarketplaceResponseDataServerCommon } from '../../common/endpoints/marketplace.js'
+import type { ResponseData } from '../types.js'
 
-/* Output */
+/* ResponseData */
 
-export interface MarketplaceServer {
-  id: number
-  owner: number
-  mrl: number
-  price: Price
-  rented: boolean
-  specs: Specs
-}
-
-export interface MarketplaceOutput extends Output {
-  servers: MarketplaceServer[]
+export interface MarketplaceResponseData extends ResponseData {
+  servers: MarketplaceResponseDataServerCommon[]
   my_servers: number[]
 }

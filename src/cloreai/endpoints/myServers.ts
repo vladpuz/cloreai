@@ -1,9 +1,9 @@
-import type { Pricing, Specs, Visibility } from '../../common/index.js'
-import type { Output } from '../types.js'
+import type { Pricing, Specs, Visibility } from '../../common/types.js'
+import type { ResponseData } from '../types.js'
 
-/* Output */
+/* ResponseData */
 
-export interface MyServersServer {
+export interface MyServersResponseDataServer {
   name: string
   connected: boolean
   visibility: Visibility
@@ -14,7 +14,7 @@ export interface MyServersServer {
   specs: Specs
 }
 
-export interface MyServersOutput extends Output {
-  servers: MyServersServer[]
+export interface MyServersResponseData extends ResponseData {
+  servers: MyServersResponseDataServer[]
   limit: number
 }

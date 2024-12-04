@@ -1,22 +1,22 @@
-import type { Pricing, Specs, Visibility } from '../../common/index.js'
-import type { Output } from '../types.js'
+import type { Pricing, Specs, Visibility } from '../../common/types.js'
+import type { ResponseData } from '../types.js'
 
-/* Body */
+/* RequestData */
 
-export interface ServerConfigBody {
+export interface ServerConfigRequestData {
   server_name: string
 }
 
-/* Output */
+/* ResponseData */
 
-export interface ServerConfigConfigBackgroundJob {
+export interface ServerConfigResponseDataConfigBackgroundJob {
   times_updated: number
   image: string
   command: string
   env: Record<string, string>
 }
 
-export interface ServerConfigConfig {
+export interface ServerConfigResponseDataConfig {
   name: string
   connected: boolean
   visibility: Visibility
@@ -28,10 +28,10 @@ export interface ServerConfigConfig {
   id: number
   rental_status: number
   specs: Specs
-  background_job: ServerConfigConfigBackgroundJob
+  background_job: ServerConfigResponseDataConfigBackgroundJob
 }
 
-export interface ServerConfigOutput extends Output {
-  config: ServerConfigConfig
+export interface ServerConfigResponseData extends ResponseData {
+  config: ServerConfigResponseDataConfig
   creation_completed: boolean
 }

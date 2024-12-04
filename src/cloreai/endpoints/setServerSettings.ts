@@ -1,8 +1,8 @@
-import type { Output } from '../types.js'
+import type { ResponseData } from '../types.js'
 
-/* Body */
+/* RequestData */
 
-export interface SetServerSettingsBody {
+export interface SetServerSettingsRequestData {
   name: string
   availability: boolean
   mrl: number
@@ -10,8 +10,6 @@ export interface SetServerSettingsBody {
   spot: number
 }
 
-/* Output */
+/* ResponseData */
 
-export interface SetServerSettingsOutput extends Output {
-
-}
+export type SetServerSettingsResponseData = ResponseData
