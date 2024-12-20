@@ -1,6 +1,6 @@
 {
   "name": "cloreai",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "type": "module",
   "description": "CLORE.AI API client",
   "repository": {
@@ -10,13 +10,17 @@
   "author": "Vladislav Puzyrev",
   "license": "MIT",
   "exports": {
-    ".": {
-      "types": "./build/index.d.ts",
-      "default": "./build/index.js"
-    },
-    "./webapi": {
-      "types": "./build/webapi.d.ts",
-      "default": "./build/webapi.js"
+    ".": "./build/index.js",
+    "./webapi": "./build/webapi.js"
+  },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "build/index.d.ts"
+      ],
+      "webapi": [
+        "build/webapi.d.ts"
+      ]
     }
   },
   "keywords": [
