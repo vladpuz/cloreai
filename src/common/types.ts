@@ -18,7 +18,7 @@ export interface CommonResponseData {
 
 export type OrderType = 'on-demand' | 'spot'
 export type Visibility = 'public' | 'hidden'
-export type Currency = 'CLORE-Blockchain' | 'bitcoin' | 'usd'
+export type Currency = 'CLORE-Blockchain' | 'bitcoin'
 
 export interface Pricing {
   'CLORE-Blockchain': number
