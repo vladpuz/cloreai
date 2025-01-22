@@ -16,8 +16,3 @@ export const priorityLevels = {
   HIGH: 1,
   HIGHEST: 2,
 }
-
-export const gigaspotBaseImages = {
-  ubuntu: 'a3f9c4d7e5b088d8a0bff880',
-  hiveos: 'c9a4e2f6b7d488d8f0bab0ff',
-}

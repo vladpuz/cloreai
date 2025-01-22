@@ -6,16 +6,14 @@ export type PQueueOptions = Options<
   QueueAddOptions
 >
 
-export interface Config {
-  apiKey: string
+export interface CommonConfig {
   axiosConfig?: CreateAxiosDefaults
   rateLimitQueueOptions?: PQueueOptions
   rateLimitQueueOptionsCreateOrder?: PQueueOptions
 }
 
-export interface ResponseData {
-  code: number
-  error?: string | null
+export interface CommonResponseData {
+  error?: string
 }
 
 export type OrderType = 'on-demand' | 'spot'

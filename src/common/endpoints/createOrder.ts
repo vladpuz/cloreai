@@ -1,4 +1,4 @@
-import type { Currency, OrderType, ResponseData } from '../types.js'
+import type { Currency, OrderType } from '../types.js'
 
 /* RequestData */
 
@@ -30,10 +30,6 @@ export interface CreateOrderRequestDataSpot
   spotprice: number
 }
 
-export type CreateOrderRequestData =
+export type CreateOrderRequestDataCommon =
   | CreateOrderRequestDataOnDemand
   | CreateOrderRequestDataSpot
-
-/* ResponseData */
-
-export type CreateOrderResponseData = ResponseData
