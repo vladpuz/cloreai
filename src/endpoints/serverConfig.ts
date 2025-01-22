@@ -1,5 +1,4 @@
-import type { Pricing, Specs, Visibility } from '../../common/types.js'
-import type { ResponseData } from '../types.js'
+import type { Pricing, ResponseData, Specs, Visibility } from '../types.js'
 
 /* RequestData */
 
