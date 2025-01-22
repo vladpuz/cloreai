@@ -2,7 +2,11 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import PQueue from 'p-queue'
 
 import type { CancelOrderRequestData, CancelOrderResponseData } from './endpoints/cancelOrder.js'
+import type { CancelOrdersRequestData, CancelOrdersResponseData } from './endpoints/cancelOrders.js'
+import type { CreateGigaspotOrdersRequestData, CreateGigaspotOrdersResponseData } from './endpoints/createGigaspotOrders.js'
 import type { CreateOrderRequestData, CreateOrderResponseData } from './endpoints/createOrder.js'
+import type { EditGigaspotOrdersRequestData, EditGigaspotOrdersResponseData } from './endpoints/editGigaspotOrders.js'
+import type { GetGigaspotResponseData, GetGigaspotResponseDataBase, GetGigaspotResponseDataSnapshot } from './endpoints/getGigaspot.js'
 import type { MarketplaceResponseData } from './endpoints/marketplace.js'
 import type { MyOrdersRequestParams, MyOrdersResponseData } from './endpoints/myOrders.js'
 import type { MyServersResponseData } from './endpoints/myServers.js'
@@ -189,6 +193,55 @@ class CloreAI {
     const response = await this.rateLimitQueueCreateOrder.add(async () => {
       return await this.axios.post<CreateOrderResponseData>('/create_order', data, config)
     }, getQueueOptions(priorityLevels.HIGHEST, config))
+
+    return response.data
+  }
+
+  public async getGigaspot(
+    config?: AxiosRequestConfig,
+  ): Promise<GetGigaspotResponseData> {
+    return await this.rateLimitQueue.add(async () => {
+      const response = await this.axios.get<GetGigaspotResponseDataBase>('/get_gigaspot', config)
+      const snapshot = await axios.get<GetGigaspotResponseDataSnapshot>(
+        response.data.v1_snapshot_url,
+      )
+
+      return {
+        ...response.data,
+        snapshot: snapshot.data,
+      }
+    }, getQueueOptions(priorityLevels.NORMAL, config))
+  }
+
+  public async createGigaspotOrders(
+    data: CreateGigaspotOrdersRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<CreateGigaspotOrdersResponseData> {
+    const response = await this.rateLimitQueue.add(async () => {
+      return await this.axios.post<CreateGigaspotOrdersResponseData>('/create_gigaspot_orders', data, config)
+    }, getQueueOptions(priorityLevels.HIGH, config))
+
+    return response.data
+  }
+
+  public async editGigaspotOrders(
+    data: EditGigaspotOrdersRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<EditGigaspotOrdersResponseData> {
+    const response = await this.rateLimitQueue.add(async () => {
+      return await this.axios.post<EditGigaspotOrdersResponseData>('/edit_gigaspot_orders', data, config)
+    }, getQueueOptions(priorityLevels.HIGH, config))
+
+    return response.data
+  }
+
+  public async cancelOrders(
+    data: CancelOrdersRequestData,
+    config?: AxiosRequestConfig,
+  ): Promise<CancelOrdersResponseData> {
+    const response = await this.rateLimitQueue.add(async () => {
+      return await this.axios.post<CancelOrdersResponseData>('/cancel_orders', data, config)
+    }, getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }

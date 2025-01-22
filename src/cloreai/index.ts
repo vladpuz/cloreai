@@ -1,7 +1,11 @@
 import CloreAI from './CloreAI.js'
 
 export type * from './endpoints/cancelOrder.js'
+export type * from './endpoints/cancelOrders.js'
+export type * from './endpoints/createGigaspotOrders.js'
 export type * from './endpoints/createOrder.js'
+export type * from './endpoints/editGigaspotOrders.js'
+export type * from './endpoints/getGigaspot.js'
 export type * from './endpoints/marketplace.js'
 export type * from './endpoints/myOrders.js'
 export type * from './endpoints/myServers.js'
