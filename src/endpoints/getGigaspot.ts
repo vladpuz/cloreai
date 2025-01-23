@@ -1,5 +1,4 @@
-import type { Currency, Pricing } from '../../common/types.js'
-import type { ResponseData } from '../types.js'
+import type { Currency, Pricing, ResponseData } from '../types.js'
 
 /* ResponseData */
 

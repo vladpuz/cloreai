@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
-import PQueue from 'p-queue'
+import PQueue, { type QueueAddOptions } from 'p-queue'
 
 import type { CancelOrderRequestData, CancelOrderResponseData } from './endpoints/cancelOrder.js'
 import type { CancelOrdersRequestData, CancelOrdersResponseData } from './endpoints/cancelOrders.js'
@@ -17,9 +17,8 @@ import type { SpotMarketplaceRequestParams, SpotMarketplaceResponseData } from '
 import type { WalletsResponseData } from './endpoints/wallets.js'
 import type { Config, ResponseData } from './types.js'
 
-import { priorityLevels, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER, statusCodes } from '../common/constants.js'
-import { type AxiosErrorParameters, DatabaseError, ExceededError, InvalidApiTokenError, InvalidEndpointError, InvalidInputDataError, OtherError, UnknownError } from '../common/errors.js'
-import { getErrorMessage, getQueueOptions } from '../common/helpers.js'
+import { priorityLevels, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER, statusCodes } from './constants.js'
+import { type AxiosErrorParameters, DatabaseError, ExceededError, InvalidApiTokenError, InvalidEndpointError, InvalidInputDataError, OtherError, UnknownError } from './errors.js'
 
 class CloreAI {
   public axios: AxiosInstance
@@ -57,10 +56,9 @@ class CloreAI {
           return response
         }
 
-        const errorMessage = getErrorMessage(
-          response.data.code,
-          response.data.error,
-        )
+        const errorMessage = response.data.error != null
+          ? `Code "${response.status}", error "${response.data.error}"`
+          : `Code "${response.status}"`
 
         const axiosErrorParameters: AxiosErrorParameters = [
           errorMessage,
@@ -90,12 +88,35 @@ class CloreAI {
     )
   }
 
+  // eslint-disable-next-line @typescript-eslint/class-methods-use-this -- Ignore
+  private getQueueOptions(
+    priority: number,
+    config?: AxiosRequestConfig,
+  ): QueueAddOptions & { throwOnTimeout: true } {
+    const defaultQueueOptions: QueueAddOptions & { throwOnTimeout: true } = {
+      throwOnTimeout: true,
+      priority,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- GenericAbortSignal
+    const signal = config?.signal as AbortSignal | undefined
+
+    if (signal == null) {
+      return defaultQueueOptions
+    }
+
+    return {
+      ...defaultQueueOptions,
+      signal,
+    }
+  }
+
   public async wallets(
     config?: AxiosRequestConfig,
   ): Promise<WalletsResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.get<WalletsResponseData>('/wallets', config)
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, this.getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
@@ -105,7 +126,7 @@ class CloreAI {
   ): Promise<MyServersResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.get<MyServersResponseData>('/my_servers', config)
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, this.getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
@@ -116,7 +137,7 @@ class CloreAI {
   ): Promise<ServerConfigResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.get<ServerConfigResponseData>('/server_config', { ...config, data })
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, this.getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
@@ -126,18 +147,18 @@ class CloreAI {
   ): Promise<MarketplaceResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.get<MarketplaceResponseData>('/marketplace', config)
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, this.getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
 
   public async myOrders(
-    params: MyOrdersRequestParams,
+    params?: MyOrdersRequestParams,
     config?: AxiosRequestConfig,
   ): Promise<MyOrdersResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.get<MyOrdersResponseData>('/my_orders', { ...config, params })
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, this.getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
@@ -148,7 +169,7 @@ class CloreAI {
   ): Promise<SpotMarketplaceResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.get<SpotMarketplaceResponseData>('/spot_marketplace', { ...config, params })
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, this.getQueueOptions(priorityLevels.NORMAL, config))
 
     return response.data
   }
@@ -159,7 +180,7 @@ class CloreAI {
   ): Promise<SetServerSettingsResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.post<SetServerSettingsResponseData>('/set_server_settings', data, config)
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, this.getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }
@@ -170,7 +191,7 @@ class CloreAI {
   ): Promise<SetSpotPriceResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.post<SetSpotPriceResponseData>('/set_spot_price', data, config)
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, this.getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }
@@ -181,7 +202,7 @@ class CloreAI {
   ): Promise<CancelOrderResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.post<CancelOrderResponseData>('/cancel_order', data, config)
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, this.getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }
@@ -192,7 +213,7 @@ class CloreAI {
   ): Promise<CreateOrderResponseData> {
     const response = await this.rateLimitQueueCreateOrder.add(async () => {
       return await this.axios.post<CreateOrderResponseData>('/create_order', data, config)
-    }, getQueueOptions(priorityLevels.HIGHEST, config))
+    }, this.getQueueOptions(priorityLevels.HIGHEST, config))
 
     return response.data
   }
@@ -210,7 +231,7 @@ class CloreAI {
         ...response.data,
         snapshot: snapshot.data,
       }
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, this.getQueueOptions(priorityLevels.NORMAL, config))
   }
 
   public async createGigaspotOrders(
@@ -219,7 +240,7 @@ class CloreAI {
   ): Promise<CreateGigaspotOrdersResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.post<CreateGigaspotOrdersResponseData>('/create_gigaspot_orders', data, config)
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, this.getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }
@@ -230,7 +251,7 @@ class CloreAI {
   ): Promise<EditGigaspotOrdersResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.post<EditGigaspotOrdersResponseData>('/edit_gigaspot_orders', data, config)
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, this.getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }
@@ -241,7 +262,7 @@ class CloreAI {
   ): Promise<CancelOrdersResponseData> {
     const response = await this.rateLimitQueue.add(async () => {
       return await this.axios.post<CancelOrdersResponseData>('/cancel_orders', data, config)
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, this.getQueueOptions(priorityLevels.HIGH, config))
 
     return response.data
   }

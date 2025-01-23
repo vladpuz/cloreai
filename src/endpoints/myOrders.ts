@@ -1,8 +1,14 @@
-import type { Currency, Specs } from '../types.js'
+import type { Currency, ResponseData, Specs } from '../types.js'
+
+/* RequestParams */
+
+export interface MyOrdersRequestParams {
+  return_completed?: boolean
+}
 
 /* ResponseData */
 
-export interface MyOrdersResponseDataOrderCommon {
+export interface MyOrdersResponseDataOrder {
   auto_login: string
   id: number
   fee: number
@@ -23,4 +29,9 @@ export interface MyOrdersResponseDataOrderCommon {
   pub_cluster: string[]
   tcp_ports: string[]
   http_port: string
+}
+
+export interface MyOrdersResponseData extends ResponseData {
+  orders: MyOrdersResponseDataOrder[]
+  limit: number
 }
