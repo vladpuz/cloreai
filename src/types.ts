@@ -8,9 +8,10 @@ export type PQueueOptions = Options<
 
 export interface Config {
   apiKey: string
-  axiosConfig?: CreateAxiosDefaults
-  rateLimitQueueOptions?: PQueueOptions
-  rateLimitQueueOptionsCreateOrder?: PQueueOptions
+  axiosOptions?: CreateAxiosDefaults
+  queueOptions?: PQueueOptions
+  queueOptionsCreateOrder?: PQueueOptions
+  queueOptionsGigaspot?: PQueueOptions
 }
 
 export interface ResponseData {
@@ -55,22 +56,30 @@ export interface Overclock {
   mem_lock: number | null
 }
 
+export interface Gpu {
+  type: string
+  mem: number
+  pcie_gen: number
+  pcie_width: number
+}
+
 export interface Specs {
-  backend_version: number
+  mb: string
   cpu: string
   cpus: string
-  disk: string
-  disk_speed: number
+  ram: number
   gpu: string
   gpuram: number
-  mb: string
+  disk: string
+  disk_speed: number
   net: Net
+  backend_version: number
   pcie_rev: number
   pcie_width: number
+  xfs?: number
+  stock_oc_override?: boolean
   pl: number[]
-  ram: number
-  stock_oc: Overclock[] | 'default'
-  stock_oc_override: boolean
+  gpus?: Gpu[]
   stock_pl: number[]
-  xfs: number
+  stock_oc: Overclock[] | 'default'
 }

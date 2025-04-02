@@ -9,5 +9,5 @@ export interface CancelOrdersRequestData {
 /* ResponseData */
 
 export interface CancelOrdersResponseData extends ResponseData {
-  failed_to_cancel: number[]
+  failed_to_cancel: string[]
 }

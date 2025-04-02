@@ -9,26 +9,26 @@ export interface MyOrdersRequestParams {
 /* ResponseData */
 
 export interface MyOrdersResponseDataOrder {
-  auto_login: string
   id: number
   fee: number
   creation_fee: number
   price: number
   mrl: number
-  online: boolean
   image: string
-  mon_container: number
   currency: Currency
   spend: number
   ct: number
-  p: number
   specs: Specs
   si: number
-  spot: boolean
-  expired: boolean
+  auto_login: string
+  mon_container: number
+  online: boolean
   pub_cluster: string[]
   tcp_ports: string[]
   http_port: string
+  http_pub: string
+  spot: boolean
+  expired: boolean
 }
 
 export interface MyOrdersResponseData extends ResponseData {

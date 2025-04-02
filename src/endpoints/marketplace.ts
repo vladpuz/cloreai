@@ -8,19 +8,19 @@ export interface MarketplaceResponseDataServerRating {
 }
 
 export interface MarketplaceResponseDataServer {
-  allowed_coins: Currency[]
-  cuda_version: string
-  gigaspot: boolean
-  gpu_array: string[]
   id: number
-  mrl: number
-  oc: boolean
   owner: number
+  mrl: number
   price: Price
-  rating: MarketplaceResponseDataServerRating
-  reliability: number
   rented: boolean
   specs: Specs
+  reliability: number
+  allowed_coins: Currency[]
+  rating: MarketplaceResponseDataServerRating
+  gpu_array: string[]
+  gigaspot: boolean
+  oc?: boolean
+  cuda_version: string
 }
 
 export interface MarketplaceResponseData extends ResponseData {
