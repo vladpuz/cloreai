@@ -1,4 +1,4 @@
-import type { Currency, ResponseData, Specs } from '../types.js'
+import type { Currency, Rating, ResponseData, Specs } from '../types.js'
 
 /* RequestParams */
 
@@ -16,10 +16,12 @@ export interface MyOrdersResponseDataOrder {
   mrl: number
   image: string
   currency: Currency
+  original_price_usd?: number
   spend: number
   ct: number
   specs: Specs
   si: number
+  my_past_rating?: number
   auto_login: string
   mon_container: number
   online: boolean
@@ -27,6 +29,11 @@ export interface MyOrdersResponseDataOrder {
   tcp_ports: string[]
   http_port: string
   http_pub: string
+  rating: Rating
+  reliability: number
+  owner: number
+  cuda_version: number
+  gpu_array: string[]
   spot: boolean
   expired: boolean
 }

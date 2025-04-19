@@ -1,22 +1,18 @@
-import type { Currency, Price, ResponseData, Specs } from '../types.js'
+import type { Currency, Price, Rating, ResponseData, Specs } from '../types.js'
 
 /* ResponseData */
-
-export interface MarketplaceResponseDataServerRating {
-  avg: number
-  cnt: number
-}
 
 export interface MarketplaceResponseDataServer {
   id: number
   owner: number
+  autoprice?: string
   mrl: number
   price: Price
   rented: boolean
   specs: Specs
   reliability: number
   allowed_coins: Currency[]
-  rating: MarketplaceResponseDataServerRating
+  rating: Rating
   gpu_array: string[]
   gigaspot: boolean
   oc?: boolean

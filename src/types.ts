@@ -35,10 +35,16 @@ export interface PricingInUSD {
   spot: number
 }
 
+export interface PricingInOriginalUSD {
+  on_demand: number
+  spot: number
+}
+
 export interface Price {
   on_demand: Pricing
   spot: Pricing
   usd?: PricingInUSD
+  original_usd?: PricingInOriginalUSD
 }
 
 export interface Net {
@@ -48,19 +54,19 @@ export interface Net {
   test_history: string[]
 }
 
+export interface Gpu {
+  type: string
+  mem: number
+  pcie_gen: number
+  pcie_width: number
+}
+
 export interface Overclock {
   model: string
   core_offset: number | null
   mem_offset: number | null
   core_lock: number | null
   mem_lock: number | null
-}
-
-export interface Gpu {
-  type: string
-  mem: number
-  pcie_gen: number
-  pcie_width: number
 }
 
 export interface Specs {
@@ -82,4 +88,9 @@ export interface Specs {
   gpus?: Gpu[]
   stock_pl: number[]
   stock_oc: Overclock[] | 'default'
+}
+
+export interface Rating {
+  avg: number
+  cnt: number
 }
