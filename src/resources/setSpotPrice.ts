@@ -23,7 +23,7 @@ export interface SetSpotPriceResponseDataNormal extends ResponseData {
   error: null
 }
 
-export type SetSpotPriceResponseData =
-  | SetSpotPriceResponseDataMaxStep
-  | SetSpotPriceResponseDataTimeToLowering
-  | SetSpotPriceResponseDataNormal
+export type SetSpotPriceResponseData
+  = | SetSpotPriceResponseDataMaxStep
+    | SetSpotPriceResponseDataTimeToLowering
+    | SetSpotPriceResponseDataNormal

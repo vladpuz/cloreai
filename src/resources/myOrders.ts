@@ -32,10 +32,10 @@ export interface MyOrdersResponseDataOrder {
   rating: Rating
   reliability: number
   owner: number
-  cuda_version: number
+  cuda_version: string
   gpu_array: string[]
-  spot: boolean
-  expired: boolean
+  spot?: boolean
+  expired?: boolean
 }
 
 export interface MyOrdersResponseData extends ResponseData {

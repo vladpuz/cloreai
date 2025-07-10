@@ -30,9 +30,9 @@ export interface CreateOrderRequestDataSpot
   spotprice: number
 }
 
-export type CreateOrderRequestData =
-  | CreateOrderRequestDataOnDemand
-  | CreateOrderRequestDataSpot
+export type CreateOrderRequestData
+  = | CreateOrderRequestDataOnDemand
+    | CreateOrderRequestDataSpot
 
 /* ResponseData */
 

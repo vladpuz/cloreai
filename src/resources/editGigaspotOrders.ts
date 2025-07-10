@@ -4,10 +4,10 @@ import type { ResponseData } from '../types.js'
 
 export interface EditGigaspotOrdersRequestDataOrderOverclock {
   pl: number
+  core_offset?: number
+  mem_offset?: number
   core_lock?: number
   mem_lock?: number
-  mem_offset?: number
-  core_offset?: number
 }
 
 export interface EditGigaspotOrdersRequestDataOrder {

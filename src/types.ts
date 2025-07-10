@@ -1,17 +1,16 @@
 import type { CreateAxiosDefaults } from 'axios'
-import type { Options, Queue, QueueAddOptions } from 'p-queue'
+import type { Options as PQueueOptions, Queue, QueueAddOptions } from 'p-queue'
 
-export type PQueueOptions = Options<
+export type QueueOptions = PQueueOptions<
   Queue<() => Promise<unknown>, QueueAddOptions>,
   QueueAddOptions
 >
 
-export interface Config {
-  apiKey: string
+export interface Options {
   axiosOptions?: CreateAxiosDefaults
-  queueOptions?: PQueueOptions
-  queueOptionsCreateOrder?: PQueueOptions
-  queueOptionsGigaspot?: PQueueOptions
+  queueOptions?: QueueOptions
+  queueOptionsCreateOrder?: QueueOptions
+  queueOptionsGigaspot?: QueueOptions
 }
 
 export interface ResponseData {
@@ -29,13 +28,13 @@ export interface Pricing {
   'usd'?: number
 }
 
-export interface PricingInUSD {
+export interface PricingInUsd {
   on_demand_btc: number
   on_demand_clore: number
   spot: number
 }
 
-export interface PricingInOriginalUSD {
+export interface PricingInOriginalUsd {
   on_demand: number
   spot: number
 }
@@ -43,8 +42,8 @@ export interface PricingInOriginalUSD {
 export interface Price {
   on_demand: Pricing
   spot: Pricing
-  usd?: PricingInUSD
-  original_usd?: PricingInOriginalUSD
+  usd?: PricingInUsd
+  original_usd?: PricingInOriginalUsd
 }
 
 export interface Net {

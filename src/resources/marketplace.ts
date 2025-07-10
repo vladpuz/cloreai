@@ -14,7 +14,7 @@ export interface MarketplaceResponseDataServer {
   allowed_coins: Currency[]
   rating: Rating
   gpu_array: string[]
-  gigaspot: boolean
+  gigaspot?: boolean
   oc?: boolean
   cuda_version: string
 }

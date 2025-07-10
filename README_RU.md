@@ -2,28 +2,28 @@
 
 > CLORE.AI API client
 
-Features:
+Особенности:
 
-- Based on [axios](https://github.com/axios/axios)
-- Protects from rate limit exceeded (429 errors) via
+- Базируется на [axios](https://github.com/axios/axios)
+- Защищает от превышения rate limit (ошибки 429) через
   [p-queue](https://github.com/sindresorhus/p-queue)
-- Error handling via try...catch and instanceof
-- Supports GigaSPOT
+- Обработка ошибок через try...catch и instanceof
+- Поддерживает GigaSPOT
 
-Official documentation: [clore.ai/api-docs](https://clore.ai/api-docs)
+Официальная документация: [clore.ai/api-docs](https://clore.ai/api-docs)
 
-Official GigaSPOT documentation:
+Официальная документация GigaSPOT:
 [gigaspot-api-docs.clore.ai](https://gigaspot-api-docs.clore.ai)
 
-## Installation
+## Установка
 
 ```shell
 npm install cloreai
 ```
 
-## Usage
+## Использование
 
-### Creating an instance
+### Создание экземпляра
 
 ```typescript
 import CloreAI from 'cloreai'
@@ -32,7 +32,7 @@ const cloreai = new CloreAI('<API_KEY>', {
   axiosOptions: {}, // (optional) Axios instance options https://github.com/axios/axios
   queueOptions: {}, // (optional) Queue instance options https://github.com/sindresorhus/p-queue
   queueOptionsCreateOrder: {}, // (optional) Create order queue instance options https://github.com/sindresorhus/p-queue
-  queueOptionsGigaspot: {}, // (optional) Gigaspot queue instance options https://github.com/sindresorhus/p-queue
+  queueOptionsGigaspot: {}, //  (optional) Gigaspot queue instance options https://github.com/sindresorhus/p-queue
 })
 ```
 
@@ -184,10 +184,10 @@ await cloreai.gigaspot.cancelOrders({
 })
 ```
 
-### Request Configuration
+### Конфигурация запросов
 
-All methods accept an optional request configuration for axios as the last
-parameter, for example:
+Все методы принимают опциональную конфигурацию запроса для axios последним
+параметром, например:
 
 ```typescript
 const marketplace = await cloreai.marketplace({
@@ -195,25 +195,25 @@ const marketplace = await cloreai.marketplace({
 })
 ```
 
-### Access to axios instance
+### Доступ к экземпляру axios
 
-Use the field `cloreai.axios`.
+Используйте поле `cloreai.axios`.
 
-Refer to the documentation [axios](https://github.com/axios/axios).
+Обратитесь к документации [axios](https://github.com/axios/axios).
 
-### Access to p-queue instances
+### Доступ к экземплярам p-queue
 
-Use the fields:
+Используйте поля:
 
-- `cloreai.queue` - for main request queue
-- `cloreai.queueCreateOrder` - for createOrder request queue
-- `cloreai.gigaspot.queue` - for gigaspot request queue
+- `cloreai.queue` - для основной очереди запросов
+- `cloreai.queueCreateOrder` - для очереди запросов createOrder
+- `cloreai.gigaspot.queue` - для очереди запросов gigaspot
 
-Refer to the documentation [p-queue](https://github.com/sindresorhus/p-queue).
+Обратитесь к документации [p-queue](https://github.com/sindresorhus/p-queue).
 
-### Error Handling
+### Обработка ошибок
 
-The library exports the following error types:
+Библиотека экспортирует следующие виды ошибок:
 
 - `DatabaseError`
 - `InvalidInputDataError`
@@ -223,9 +223,9 @@ The library exports the following error types:
 - `OtherError`
 - `UnknownError`
 
-All these errors inherit from `AxiosError`.
+Все эти ошибки наследуются от `AxiosError`.
 
-Check the error type via the `instanceof` operator:
+Проверяйте тип ошибки через оператор `instanceof`:
 
 ```typescript
 import { AxiosError } from 'axios'
@@ -248,11 +248,11 @@ try {
 
 ### Rate limit
 
-All methods are protected from rate limit exceeded via
-[p-queue](https://github.com/sindresorhus/p-queue), they automatically pause for
-the required time to avoid exceeding the limit.
+Все методы защищены от превышения rate limit через
+[p-queue](https://github.com/sindresorhus/p-queue), они автоматически
+задерживаются на нужное время, чтобы избежать превышения лимита.
 
-Default rate limit values are available as constants:
+Значения rate limit по умолчанию доступны как константы:
 
 ```typescript
 import {
@@ -266,7 +266,7 @@ console.log(RATE_LIMIT_CREATE_ORDER)
 console.log(RATE_LIMIT_GIGASPOT)
 ```
 
-You can set your own rate limit values for each request queue:
+Можно задать собственные значение rate limit для каждой очереди запросов:
 
 ```typescript
 import CloreAI from 'cloreai'
