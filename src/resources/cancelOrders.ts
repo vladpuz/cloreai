@@ -1,12 +1,8 @@
-import type { ResponseData } from '../types.js'
-
-/* RequestData */
+import type { ResponseData } from '../types.ts'
 
 export interface CancelOrdersRequestData {
   order_ids: number[]
 }
-
-/* ResponseData */
 
 export interface CancelOrdersResponseData extends ResponseData {
   failed_to_cancel: string[]

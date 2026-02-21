@@ -1,16 +1,11 @@
-import type { Currency, Rating, ResponseData, Specs } from '../types.js'
-
-/* RequestParams */
+import type { Currency, Rating, ResponseData, Specs } from '../types.ts'
 
 export interface MyOrdersRequestParams {
   return_completed?: boolean
 }
 
-/* ResponseData */
-
-export interface MyOrdersResponseDataOrder {
+export interface MyOrdersOrder {
   id: number
-  fee: number
   creation_fee: number
   price: number
   mrl: number
@@ -39,6 +34,6 @@ export interface MyOrdersResponseDataOrder {
 }
 
 export interface MyOrdersResponseData extends ResponseData {
-  orders: MyOrdersResponseDataOrder[]
+  orders: MyOrdersOrder[]
   limit: number
 }

@@ -1,8 +1,6 @@
-import type { Currency, Pricing, ResponseData } from '../types.js'
+import type { Currency, Pricing, ResponseData } from '../types.ts'
 
-/* ResponseData */
-
-export interface GetGigaspotResponseDataSnapshotServerBid {
+export interface GetGigaspotSnapshotServerBid {
   owner: number
   id: number
   active: boolean
@@ -13,7 +11,7 @@ export interface GetGigaspotResponseDataSnapshotServerBid {
   pl: number
 }
 
-export interface GetGigaspotResponseDataSnapshotServerGpu {
+export interface GetGigaspotSnapshotServerGpu {
   pl: [number, number]
   mem_lock: [number, number]
   core_lock: [number, number]
@@ -22,15 +20,15 @@ export interface GetGigaspotResponseDataSnapshotServerGpu {
   model: string
 }
 
-export interface GetGigaspotResponseDataSnapshotServer {
-  bids: GetGigaspotResponseDataSnapshotServerBid[]
+export interface GetGigaspotSnapshotServer {
+  bids: GetGigaspotSnapshotServerBid[]
   on_demand_rented: boolean
   online: boolean
   cpu: string
   cores: number
   threads: number
   ram: number
-  gpus: GetGigaspotResponseDataSnapshotServerGpu[]
+  gpus: GetGigaspotSnapshotServerGpu[]
   working_properly: boolean
   cuda: string
   max_rental_length: number
@@ -41,10 +39,7 @@ export interface GetGigaspotResponseDataSnapshotServer {
   energy_price: number
 }
 
-export type GetGigaspotResponseDataSnapshot = Record<
-  string,
-  GetGigaspotResponseDataSnapshotServer
->
+export type GetGigaspotSnapshot = Record<string, GetGigaspotSnapshotServer>
 
 export interface GetGigaspotResponseDataBase extends ResponseData {
   my_user_id: number
@@ -53,5 +48,5 @@ export interface GetGigaspotResponseDataBase extends ResponseData {
 }
 
 export interface GetGigaspotResponseData extends GetGigaspotResponseDataBase {
-  snapshot: GetGigaspotResponseDataSnapshot
+  snapshot: GetGigaspotSnapshot
 }

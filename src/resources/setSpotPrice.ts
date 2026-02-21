@@ -1,29 +1,23 @@
-/* RequestData */
-
-import type { ResponseData } from '../types.js'
+import type { ResponseData } from '../types.ts'
 
 export interface SetSpotPriceRequestData {
   order_id: number
   desired_price: number
 }
 
-/* ResponseData */
-
-export interface SetSpotPriceResponseDataMaxStep extends ResponseData {
+export interface SetSpotPriceMaxStep extends ResponseData {
   error: 'exceeded_max_step'
   max_step: number
 }
 
-export interface SetSpotPriceResponseDataTimeToLowering extends ResponseData {
+export interface SetSpotPriceTimeToLowering extends ResponseData {
   error: 'can_lower_every_600_seconds'
   time_to_lowering: number
 }
 
-export interface SetSpotPriceResponseDataNormal extends ResponseData {
-  error: null
-}
+export type SetSpotPriceNormal = Omit<ResponseData, 'error'>
 
 export type SetSpotPriceResponseData
-  = | SetSpotPriceResponseDataMaxStep
-    | SetSpotPriceResponseDataTimeToLowering
-    | SetSpotPriceResponseDataNormal
+  = | SetSpotPriceMaxStep
+    | SetSpotPriceTimeToLowering
+    | SetSpotPriceNormal

@@ -1,28 +1,15 @@
-import type { Currency, ResponseData } from '../types.js'
+import type { Currency, GigaspotOverclock, ResponseData } from '../types.ts'
 
-/* RequestData */
-
-export interface CreateGigaspotOrdersRequestDataOrderOverclock {
-  pl: number
-  core_offset?: number
-  mem_offset?: number
-  core_lock?: number
-  mem_lock?: number
-}
-
-export interface CreateGigaspotOrdersRequestDataOrder {
+export interface CreateGigaspotOrdersOrder {
   currency: Currency
   image: string
   renting_server: number
   price: number
-  oc: CreateGigaspotOrdersRequestDataOrderOverclock[]
+  oc: GigaspotOverclock[]
   env?: Record<string, string>
 }
 
-export type CreateGigaspotOrdersRequestData
-    = CreateGigaspotOrdersRequestDataOrder[]
-
-/* ResponseData */
+export type CreateGigaspotOrdersRequestData = CreateGigaspotOrdersOrder[]
 
 export interface CreateGigaspotOrdersResponseData extends ResponseData {
   failed_to_oc_servers: number[]

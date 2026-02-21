@@ -1,35 +1,31 @@
-import type { Currency, Pricing, ResponseData, Visibility } from '../types.js'
-
-/* RequestParams */
+import type { Currency, Pricing, ResponseData, Visibility } from '../types.ts'
 
 export interface SpotMarketplaceRequestParams {
   market: number
 }
 
-/* ResponseData */
-
-export interface SpotMarketplaceResponseDataOffer {
-  active: boolean
-  bid: number
-  currency: Currency
-  my: boolean
+export interface SpotMarketplaceMarketOffer {
   offer_id: number
+  bid: number
+  active: boolean
+  my: boolean
+  currency: Currency
 }
 
-export interface SpotMarketplaceResponseDataServer {
+export interface SpotMarketplaceMarketServer {
   min_pricing: Pricing
   mrl: number
   online: boolean
   visibility: Visibility
 }
 
-export interface SpotMarketplaceResponseDataMarket {
+export interface SpotMarketplaceMarket {
   currency_rates_in_usd: Pricing
-  offers: SpotMarketplaceResponseDataOffer[]
-  server: SpotMarketplaceResponseDataServer
+  offers: SpotMarketplaceMarketOffer[]
+  server: SpotMarketplaceMarketServer
 }
 
 export interface SpotMarketplaceResponseData extends ResponseData {
-  market: SpotMarketplaceResponseDataMarket
+  market: SpotMarketplaceMarket
   exists: boolean
 }

@@ -7,7 +7,8 @@
 - Базируется на [axios](https://github.com/axios/axios)
 - Защищает от превышения rate limit (ошибки 429) через
   [p-queue](https://github.com/sindresorhus/p-queue)
-- Обработка ошибок через try...catch и instanceof
+- Удобная обработка ошибок
+- Полная типизация
 - Поддерживает GigaSPOT
 
 Официальная документация: [clore.ai/api-docs](https://clore.ai/api-docs)
@@ -26,13 +27,13 @@ npm install cloreai
 ### Создание экземпляра
 
 ```typescript
-import CloreAI from 'cloreai'
+import Cloreai from 'cloreai'
 
-const cloreai = new CloreAI('<API_KEY>', {
+const cloreai = new Cloreai('API_KEY', {
   axiosOptions: {}, // (optional) Axios instance options https://github.com/axios/axios
   queueOptions: {}, // (optional) Queue instance options https://github.com/sindresorhus/p-queue
-  queueOptionsCreateOrder: {}, // (optional) Create order queue instance options https://github.com/sindresorhus/p-queue
-  queueOptionsGigaspot: {}, //  (optional) Gigaspot queue instance options https://github.com/sindresorhus/p-queue
+  queueCreateOrderOptions: {}, // (optional) Create order queue instance options https://github.com/sindresorhus/p-queue
+  queueGigaspotOptions: {}, //  (optional) Gigaspot queue instance options https://github.com/sindresorhus/p-queue
 })
 ```
 
@@ -52,7 +53,7 @@ const myServers = await cloreai.myServers()
 
 ```typescript
 const serverConfig = await cloreai.serverConfig({
-  server_name: 'server_name',
+  server_name: 'SERVER_NAME',
 })
 ```
 
@@ -81,13 +82,28 @@ const spotMarketplace = await cloreai.spotMarketplace({
 
 ```typescript
 await cloreai.setServerSettings({
-  'name': 'name', // Server name
+  'name': 'NAME', // Server name
   'availability': true,
   'mrl': 24,
-  'on_demand': 50,
-  'spot': 50,
-  'CLORE-Blockchain_on_demand': 50,
-  'CLORE-Blockchain_spot': 50,
+  'bitcoin_on_demand': 1,
+  'bitcoin_spot': 1,
+  'CLORE-Blockchain_on_demand': 1,
+  'CLORE-Blockchain_spot': 1,
+  'USD-Blockchain_on_demand': 1,
+  'USD-Blockchain_spot': 1,
+  'enabled-USD-Blockchain': true,
+  'enabled-CLORE-Blockchain': true,
+  'enabled-bitcoin': true,
+  'autoprice': {
+    'CLORE-Blockchain': 'usd',
+    'USD-Blockchain': 'usd',
+    'bitcoin': 'usd',
+  },
+  'usd_pricing': {
+    'CLORE-Blockchain': { on_demand: 1, spot: 1 },
+    'USD-Blockchain': { on_demand: 1, spot: 1 },
+    'bitcoin': { on_demand: 1, spot: 1 },
+  },
 })
 ```
 
@@ -119,8 +135,8 @@ await cloreai.createOrder({
   renting_server: 5738,
   ports: { 22: 'tcp', 8888: 'http' },
   env: { SSH_PASSWORD: 'SSH_PASSWORD', JUPYTER_TOKEN: 'JUPYTER_TOKEN' },
-  jupyter_token: 'jupyter_token',
-  ssh_password: 'ssh_password',
+  jupyter_token: 'JUPYTER_TOKEN',
+  ssh_password: 'SSH_PASSWORD',
   required_price: 50,
   remember_password: true,
 })
@@ -130,6 +146,12 @@ await cloreai.createOrder({
 
 ```typescript
 const pohBalance = await cloreai.pohBalance()
+```
+
+### 12. renter_fees
+
+```typescript
+const renterFees = await cloreai.renterFees()
 ```
 
 ### GigaSPOT
@@ -213,36 +235,28 @@ const marketplace = await cloreai.marketplace({
 
 ### Обработка ошибок
 
-Библиотека экспортирует следующие виды ошибок:
+Используйте класс `CloreaiError` для обработки ошибок.
 
-- `DatabaseError`
-- `InvalidInputDataError`
-- `InvalidApiTokenError`
-- `InvalidEndpointError`
-- `ExceededError`
-- `OtherError`
-- `UnknownError`
+Этот класс наследуется от `AxiosError` и имеет дополнительные поля с информацией
+об ошибке `error.code` и `error.error`.
 
-Все эти ошибки наследуются от `AxiosError`.
-
-Проверяйте тип ошибки через оператор `instanceof`:
+Для проверки типа ошибки используйте константу `statusCodes`.
 
 ```typescript
-import { AxiosError } from 'axios'
-import { ExceededError } from 'cloreai'
+import { CloreaiError, statusCodes } from 'cloreai'
 
 try {
   const marketplace = await cloreai.marketplace()
 } catch (error) {
-  if (error instanceof AxiosError) {
-    console.log('AxiosError')
-  }
+  if (error instanceof CloreaiError) {
+    console.log(error.code, error.error)
 
-  if (error instanceof ExceededError) {
-    console.log('ExceededError')
+    if (error.code === statusCodes.EXCEEDED) {
+      console.log('Rate limit exceeded error')
+    }
+  } else {
+    throw error
   }
-
-  throw error
 }
 ```
 
@@ -269,16 +283,16 @@ console.log(RATE_LIMIT_GIGASPOT)
 Можно задать собственные значение rate limit для каждой очереди запросов:
 
 ```typescript
-import CloreAI from 'cloreai'
+import Cloreai from 'cloreai'
 
-const cloreai = new CloreAI('<API_KEY>', {
+const cloreai = new Cloreai('API_KEY', {
   queueOptions: {
     interval: 2000, // For example 2 seconds
   },
-  queueOptionsCreateOrder: {
+  queueCreateOrderOptions: {
     interval: 6000, // For example 6 seconds
   },
-  queueOptionsGigaspot: {
+  queueGigaspotOptions: {
     interval: 2000, // For example 2 seconds
   },
 })

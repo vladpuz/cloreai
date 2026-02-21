@@ -1,8 +1,6 @@
-import type { ResponseData } from '../types.js'
+import type { ResponseData } from '../types.ts'
 
-/* ResponseData */
-
-export interface PohBalanceResponseDataBalanceOffers {
+export interface PohBalanceOffers {
   rented_amount: number
   rented_on_marketplace_amount: number
   rented_finished_amount: number
@@ -10,14 +8,14 @@ export interface PohBalanceResponseDataBalanceOffers {
   leased_finished_amount: number
 }
 
-export interface PohBalanceResponseDataBalance {
+export interface PohBalance {
   total: number
   free_amount: number
   reward_amount: number
-  offers: PohBalanceResponseDataBalanceOffers
+  offers: PohBalanceOffers
 }
 
-export interface PohBalanceResponseDataItem {
+export interface PohBalanceItem {
   user: number
   address: string
   signature: string
@@ -31,7 +29,7 @@ export interface PohBalanceResponseDataItem {
 }
 
 export interface PohBalanceResponseData extends ResponseData {
-  items: PohBalanceResponseDataItem[]
-  balance: PohBalanceResponseDataBalance
+  items: PohBalanceItem[]
+  balance: PohBalance
   count: number
 }

@@ -1,31 +1,31 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import PQueue from 'p-queue'
 
-import type { CancelOrdersRequestData, CancelOrdersResponseData } from './resources/cancelOrders.js'
-import type { CreateGigaspotOrdersRequestData, CreateGigaspotOrdersResponseData } from './resources/createGigaspotOrders.js'
-import type { EditGigaspotOrdersRequestData, EditGigaspotOrdersResponseData } from './resources/editGigaspotOrders.js'
-import type { GetGigaspotResponseData, GetGigaspotResponseDataBase, GetGigaspotResponseDataSnapshot } from './resources/getGigaspot.js'
-import type { Options } from './types.js'
+import type { Options } from './Cloreai.ts'
+import type { CancelOrdersRequestData, CancelOrdersResponseData } from './resources/cancelOrders.ts'
+import type { CreateGigaspotOrdersRequestData, CreateGigaspotOrdersResponseData } from './resources/createGigaspotOrders.ts'
+import type { EditGigaspotOrdersRequestData, EditGigaspotOrdersResponseData } from './resources/editGigaspotOrders.ts'
+import type { GetGigaspotResponseData, GetGigaspotResponseDataBase, GetGigaspotSnapshot } from './resources/getGigaspot.ts'
 
-import { priorityLevels, RATE_LIMIT_GIGASPOT } from './constants.js'
-import { getQueueOptions } from './getQueueOptions.js'
+import { priorityLevels, RATE_LIMIT_GIGASPOT } from './constants.ts'
+import { getQueueOptions } from './getQueueOptions.ts'
 
 class Gigaspot {
-  public queue: PQueue
-  private axios: AxiosInstance
+  axios: AxiosInstance
+  queue: PQueue
 
-  public constructor(options: Options, axios: AxiosInstance) {
+  constructor(options: Options, axios: AxiosInstance) {
     this.queue = new PQueue({
       interval: RATE_LIMIT_GIGASPOT,
       intervalCap: 1,
       concurrency: 1,
-      ...options.queueOptionsGigaspot,
+      ...options.queueGigaspotOptions,
     })
 
     this.axios = axios
   }
 
-  public async getGigaspot(
+  async getGigaspot(
     config?: AxiosRequestConfig,
   ): Promise<GetGigaspotResponseData> {
     return await this.queue.add(async () => {
@@ -34,7 +34,7 @@ class Gigaspot {
         config,
       )
 
-      const snapshot = await axios.get<GetGigaspotResponseDataSnapshot>(
+      const snapshot = await axios.get<GetGigaspotSnapshot>(
         response.data.v1_snapshot_url,
       )
 
@@ -42,10 +42,10 @@ class Gigaspot {
         ...response.data,
         snapshot: snapshot.data,
       }
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
   }
 
-  public async createGigaspotOrders(
+  async createGigaspotOrders(
     data: CreateGigaspotOrdersRequestData,
     config?: AxiosRequestConfig,
   ): Promise<CreateGigaspotOrdersResponseData> {
@@ -55,12 +55,12 @@ class Gigaspot {
         data,
         config,
       )
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
 
     return response.data
   }
 
-  public async editGigaspotOrders(
+  async editGigaspotOrders(
     data: EditGigaspotOrdersRequestData,
     config?: AxiosRequestConfig,
   ): Promise<EditGigaspotOrdersResponseData> {
@@ -70,12 +70,12 @@ class Gigaspot {
         data,
         config,
       )
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
 
     return response.data
   }
 
-  public async cancelOrders(
+  async cancelOrders(
     data: CancelOrdersRequestData,
     config?: AxiosRequestConfig,
   ): Promise<CancelOrdersResponseData> {
@@ -85,7 +85,7 @@ class Gigaspot {
         data,
         config,
       )
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
 
     return response.data
   }

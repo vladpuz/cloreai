@@ -1,32 +1,44 @@
-import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
-import PQueue from 'p-queue'
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type CreateAxiosDefaults } from 'axios'
+import PQueue, { type Options as PQueueOptions, type Queue, type QueueAddOptions } from 'p-queue'
 
-import type { CancelOrderRequestData, CancelOrderResponseData } from './resources/cancelOrder.js'
-import type { CreateOrderRequestData, CreateOrderResponseData } from './resources/createOrder.js'
-import type { MarketplaceResponseData } from './resources/marketplace.js'
-import type { MyOrdersRequestParams, MyOrdersResponseData } from './resources/myOrders.js'
-import type { MyServersResponseData } from './resources/myServers.js'
-import type { PohBalanceResponseData } from './resources/pohBalance.js'
-import type { ServerConfigRequestData, ServerConfigResponseData } from './resources/serverConfig.js'
-import type { SetServerSettingsRequestData, SetServerSettingsResponseData } from './resources/setServerSettings.js'
-import type { SetSpotPriceRequestData, SetSpotPriceResponseData } from './resources/setSpotPrice.js'
-import type { SpotMarketplaceRequestParams, SpotMarketplaceResponseData } from './resources/spotMarketplace.js'
-import type { WalletsResponseData } from './resources/wallets.js'
-import type { Options, ResponseData } from './types.js'
+import type { CancelOrderRequestData, CancelOrderResponseData } from './resources/cancelOrder.ts'
+import type { CreateOrderRequestData, CreateOrderResponseData } from './resources/createOrder.ts'
+import type { MarketplaceResponseData } from './resources/marketplace.ts'
+import type { MyOrdersRequestParams, MyOrdersResponseData } from './resources/myOrders.ts'
+import type { MyServersResponseData } from './resources/myServers.ts'
+import type { PohBalanceResponseData } from './resources/pohBalance.ts'
+import type { RenterFeesResponseData } from './resources/renterFees.ts'
+import type { ServerConfigRequestData, ServerConfigResponseData } from './resources/serverConfig.ts'
+import type { SetServerSettingsRequestData, SetServerSettingsResponseData } from './resources/setServerSettings.ts'
+import type { SetSpotPriceRequestData, SetSpotPriceResponseData } from './resources/setSpotPrice.ts'
+import type { SpotMarketplaceRequestParams, SpotMarketplaceResponseData } from './resources/spotMarketplace.ts'
+import type { WalletsResponseData } from './resources/wallets.ts'
+import type { ResponseData } from './types.ts'
 
-import { priorityLevels, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER, statusCodes } from './constants.js'
-import { DatabaseError, ExceededError, InvalidApiTokenError, InvalidEndpointError, InvalidInputDataError, OtherError, UnknownError } from './errors.js'
-import { getQueueOptions } from './getQueueOptions.js'
-import Gigaspot from './Gigaspot.js'
+import { CloreaiError } from './CloreaiError.ts'
+import { priorityLevels, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER, statusCodes } from './constants.ts'
+import { getQueueOptions } from './getQueueOptions.ts'
+import Gigaspot from './Gigaspot.ts'
 
-class CloreAI {
-  public axios: AxiosInstance
-  public queue: PQueue
-  public queueCreateOrder: PQueue
+export type QueueOptions = PQueueOptions<
+  Queue<() => Promise<unknown>, QueueAddOptions>,
+  QueueAddOptions
+>
 
-  public gigaspot: Gigaspot
+export interface Options {
+  axiosOptions?: CreateAxiosDefaults
+  queueOptions?: QueueOptions
+  queueCreateOrderOptions?: QueueOptions
+  queueGigaspotOptions?: QueueOptions
+}
 
-  public constructor(apiKey: string, options: Options = {}) {
+class Cloreai {
+  axios: AxiosInstance
+  queue: PQueue
+  queueCreateOrder: PQueue
+  gigaspot: Gigaspot
+
+  constructor(apiKey: string, options: Options = {}) {
     this.queue = new PQueue({
       interval: RATE_LIMIT,
       intervalCap: 1,
@@ -38,12 +50,12 @@ class CloreAI {
       interval: RATE_LIMIT_CREATE_ORDER,
       intervalCap: 1,
       concurrency: 1,
-      ...options.queueOptionsCreateOrder,
+      ...options.queueCreateOrderOptions,
     })
 
     this.axios = axios.create({
-      ...options.axiosOptions,
       baseURL: 'https://api.clore.ai/v1',
+      ...options.axiosOptions,
     })
 
     this.axios.interceptors.request.use((request) => {
@@ -57,41 +69,28 @@ class CloreAI {
           return response
         }
 
-        const errorMessage = response.data.error != null
-          ? `Code "${response.data.code}", error "${response.data.error}"`
-          : `Code "${response.data.code}"`
+        const errorMessage = `Code "${response.data.code}"`
 
-        const axiosErrorParameters: ConstructorParameters<typeof AxiosError> = [
-          errorMessage,
-          undefined,
-          response.config,
-          response.request,
+        const error = new CloreaiError(errorMessage, {
+          code: String(response.data.code),
+          config: response.config,
+          request: response.request,
           response,
-        ]
+        })
 
-        switch (response.data.code) {
-          case statusCodes.DATABASE_ERROR:
-            throw new DatabaseError(...axiosErrorParameters)
-          case statusCodes.INVALID_INPUT_DATA:
-            throw new InvalidInputDataError(...axiosErrorParameters)
-          case statusCodes.INVALID_API_TOKEN:
-            throw new InvalidApiTokenError(...axiosErrorParameters)
-          case statusCodes.INVALID_ENDPOINT:
-            throw new InvalidEndpointError(...axiosErrorParameters)
-          case statusCodes.EXCEEDED:
-            throw new ExceededError(...axiosErrorParameters)
-          case statusCodes.OTHER:
-            throw new OtherError(...axiosErrorParameters)
-          default:
-            throw new UnknownError(...axiosErrorParameters)
+        if (response.data.error != null) {
+          error.message += `, error "${response.data.error}"`
+          error.error = response.data.error
         }
+
+        throw error
       },
     )
 
     this.gigaspot = new Gigaspot(options, this.axios)
   }
 
-  public async wallets(
+  async wallets(
     config?: AxiosRequestConfig,
   ): Promise<WalletsResponseData> {
     const response = await this.queue.add(async () => {
@@ -99,12 +98,12 @@ class CloreAI {
         '/wallets',
         config,
       )
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
 
     return response.data
   }
 
-  public async myServers(
+  async myServers(
     config?: AxiosRequestConfig,
   ): Promise<MyServersResponseData> {
     const response = await this.queue.add(async () => {
@@ -112,12 +111,12 @@ class CloreAI {
         '/my_servers',
         config,
       )
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
 
     return response.data
   }
 
-  public async serverConfig(
+  async serverConfig(
     data: ServerConfigRequestData,
     config?: AxiosRequestConfig,
   ): Promise<ServerConfigResponseData> {
@@ -126,12 +125,12 @@ class CloreAI {
         '/server_config',
         { ...config, data },
       )
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
 
     return response.data
   }
 
-  public async marketplace(
+  async marketplace(
     config?: AxiosRequestConfig,
   ): Promise<MarketplaceResponseData> {
     const response = await this.queue.add(async () => {
@@ -139,12 +138,12 @@ class CloreAI {
         '/marketplace',
         config,
       )
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
 
     return response.data
   }
 
-  public async myOrders(
+  async myOrders(
     params?: MyOrdersRequestParams,
     config?: AxiosRequestConfig,
   ): Promise<MyOrdersResponseData> {
@@ -153,12 +152,12 @@ class CloreAI {
         '/my_orders',
         { ...config, params },
       )
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
 
     return response.data
   }
 
-  public async spotMarketplace(
+  async spotMarketplace(
     params: SpotMarketplaceRequestParams,
     config?: AxiosRequestConfig,
   ): Promise<SpotMarketplaceResponseData> {
@@ -167,12 +166,12 @@ class CloreAI {
         '/spot_marketplace',
         { ...config, params },
       )
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
 
     return response.data
   }
 
-  public async setServerSettings(
+  async setServerSettings(
     data: SetServerSettingsRequestData,
     config?: AxiosRequestConfig,
   ): Promise<SetServerSettingsResponseData> {
@@ -182,12 +181,12 @@ class CloreAI {
         data,
         config,
       )
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
 
     return response.data
   }
 
-  public async setSpotPrice(
+  async setSpotPrice(
     data: SetSpotPriceRequestData,
     config?: AxiosRequestConfig,
   ): Promise<SetSpotPriceResponseData> {
@@ -197,12 +196,12 @@ class CloreAI {
         data,
         config,
       )
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
 
     return response.data
   }
 
-  public async cancelOrder(
+  async cancelOrder(
     data: CancelOrderRequestData,
     config?: AxiosRequestConfig,
   ): Promise<CancelOrderResponseData> {
@@ -212,12 +211,12 @@ class CloreAI {
         data,
         config,
       )
-    }, getQueueOptions(priorityLevels.HIGH, config))
+    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
 
     return response.data
   }
 
-  public async createOrder(
+  async createOrder(
     data: CreateOrderRequestData,
     config?: AxiosRequestConfig,
   ): Promise<CreateOrderResponseData> {
@@ -227,12 +226,12 @@ class CloreAI {
         data,
         config,
       )
-    }, getQueueOptions(priorityLevels.HIGHEST, config))
+    }, getQueueOptions(priorityLevels.HIGHEST, this.axios, config))
 
     return response.data
   }
 
-  public async pohBalance(
+  async pohBalance(
     config?: AxiosRequestConfig,
   ): Promise<PohBalanceResponseData> {
     const response = await this.queue.add(async () => {
@@ -240,10 +239,23 @@ class CloreAI {
         '/poh_balance',
         config,
       )
-    }, getQueueOptions(priorityLevels.NORMAL, config))
+    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
+
+    return response.data
+  }
+
+  async renterFees(
+    config?: AxiosRequestConfig,
+  ): Promise<RenterFeesResponseData> {
+    const response = await this.queue.add(async () => {
+      return await this.axios.get<RenterFeesResponseData>(
+        '/renter_fees',
+        config,
+      )
+    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
 
     return response.data
   }
 }
 
-export default CloreAI
+export default Cloreai

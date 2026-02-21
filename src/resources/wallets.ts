@@ -1,8 +1,6 @@
-import type { Currency, ResponseData } from '../types.js'
+import type { Currency, ResponseData } from '../types.ts'
 
-/* ResponseData */
-
-export interface WalletsResponseDataWallet {
+export interface Wallet {
   name: Currency
   deposit: string
   balance: number
@@ -10,5 +8,5 @@ export interface WalletsResponseDataWallet {
 }
 
 export interface WalletsResponseData extends ResponseData {
-  wallets: WalletsResponseDataWallet[]
+  wallets: Wallet[]
 }

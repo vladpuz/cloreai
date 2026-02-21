@@ -1,19 +1,18 @@
-import type { Pricing, ResponseData, Specs, Visibility } from '../types.js'
+import type { Currency, Pricing, ResponseData, Specs, Visibility } from '../types.ts'
 
-/* ResponseData */
-
-export interface MyServersResponseDataServer {
+export interface MyServersServer {
   name: string
   connected: boolean
   visibility: Visibility
   pricing: Pricing
   online: boolean
   min_spot_pricing: Pricing
-  init_token: string
-  specs: Specs
+  allowed_currencies: Currency[]
+  init_token?: string
+  specs?: Specs
 }
 
 export interface MyServersResponseData extends ResponseData {
-  servers: MyServersResponseDataServer[]
+  servers: MyServersServer[]
   limit: number
 }

@@ -1,48 +1,30 @@
-import type { CreateAxiosDefaults } from 'axios'
-import type { Options as PQueueOptions, Queue, QueueAddOptions } from 'p-queue'
-
-export type QueueOptions = PQueueOptions<
-  Queue<() => Promise<unknown>, QueueAddOptions>,
-  QueueAddOptions
->
-
-export interface Options {
-  axiosOptions?: CreateAxiosDefaults
-  queueOptions?: QueueOptions
-  queueOptionsCreateOrder?: QueueOptions
-  queueOptionsGigaspot?: QueueOptions
-}
-
 export interface ResponseData {
   code: number
-  error?: string | null
+  error?: string
 }
 
 export type OrderType = 'on-demand' | 'spot'
 export type Visibility = 'public' | 'hidden'
-export type Currency = 'CLORE-Blockchain' | 'bitcoin'
+export type Currency = 'CLORE-Blockchain' | 'USD-Blockchain' | 'bitcoin'
+export type Pricing = Partial<Record<Currency, number>>
+export type AutoPrice = Partial<Record<Currency, 'usd' | false>>
 
-export interface Pricing {
-  'CLORE-Blockchain': number
-  'bitcoin': number
-  'usd'?: number
-}
+export type PricingInOriginalUsd = Partial<Record<Currency, {
+  on_demand: number
+  spot: number
+}>>
 
 export interface PricingInUsd {
-  on_demand_btc: number
   on_demand_clore: number
-  spot: number
-}
-
-export interface PricingInOriginalUsd {
-  on_demand: number
+  on_demand_usd: number
+  on_demand_btc: number
   spot: number
 }
 
 export interface Price {
   on_demand: Pricing
   spot: Pricing
-  usd?: PricingInUsd
+  usd: PricingInUsd
   original_usd?: PricingInOriginalUsd
 }
 
@@ -92,4 +74,12 @@ export interface Specs {
 export interface Rating {
   avg: number
   cnt: number
+}
+
+export interface GigaspotOverclock {
+  pl: number
+  core_offset?: number
+  mem_offset?: number
+  core_lock?: number
+  mem_lock?: number
 }

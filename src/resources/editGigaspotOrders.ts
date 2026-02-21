@@ -1,25 +1,12 @@
-import type { ResponseData } from '../types.js'
+import type { GigaspotOverclock, ResponseData } from '../types.ts'
 
-/* RequestData */
-
-export interface EditGigaspotOrdersRequestDataOrderOverclock {
-  pl: number
-  core_offset?: number
-  mem_offset?: number
-  core_lock?: number
-  mem_lock?: number
-}
-
-export interface EditGigaspotOrdersRequestDataOrder {
+export interface EditGigaspotOrdersOrder {
   order_id: number
   price: number
-  oc: EditGigaspotOrdersRequestDataOrderOverclock[]
+  oc: GigaspotOverclock[]
 }
 
-export type EditGigaspotOrdersRequestData
-    = EditGigaspotOrdersRequestDataOrder[]
-
-/* ResponseData */
+export type EditGigaspotOrdersRequestData = EditGigaspotOrdersOrder[]
 
 export interface EditGigaspotOrdersResponseData extends ResponseData {
   success_to_update_ids: number[]

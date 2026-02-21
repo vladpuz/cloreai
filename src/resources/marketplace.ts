@@ -1,8 +1,6 @@
-import type { Currency, Price, Rating, ResponseData, Specs } from '../types.js'
+import type { Currency, Price, Rating, ResponseData, Specs } from '../types.ts'
 
-/* ResponseData */
-
-export interface MarketplaceResponseDataServer {
+export interface MarketplaceServer {
   id: number
   owner: number
   autoprice?: string
@@ -20,6 +18,5 @@ export interface MarketplaceResponseDataServer {
 }
 
 export interface MarketplaceResponseData extends ResponseData {
-  servers: MarketplaceResponseDataServer[]
-  my_servers: number[]
+  servers: MarketplaceServer[]
 }
