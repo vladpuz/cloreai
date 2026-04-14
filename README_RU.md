@@ -4,7 +4,7 @@
 
 Особенности:
 
-- Базируется на [axios](https://github.com/axios/axios)
+- Базируется на нативном fetch
 - Защищает от превышения rate limit (ошибки 429) через
   [p-queue](https://github.com/sindresorhus/p-queue)
 - Удобная обработка ошибок
@@ -30,10 +30,11 @@ npm install cloreai
 import Cloreai from 'cloreai'
 
 const cloreai = new Cloreai('API_KEY', {
-  axiosOptions: {}, // (optional) Axios instance options https://github.com/axios/axios
+  baseURL: 'https://api.clore.ai/v1', // (optional) Override the default base URL for the API
+  fetch: globalThis.fetch, // (optional) Specify a custom `fetch` function implementation
+  fetchOptions: {}, // (optional) Additional `RequestInit` options to be passed to `fetch` calls
   queueOptions: {}, // (optional) Queue instance options https://github.com/sindresorhus/p-queue
   queueCreateOrderOptions: {}, // (optional) Create order queue instance options https://github.com/sindresorhus/p-queue
-  queueGigaspotOptions: {}, //  (optional) Gigaspot queue instance options https://github.com/sindresorhus/p-queue
 })
 ```
 
@@ -142,7 +143,7 @@ await cloreai.createOrder({
 })
 ```
 
-### 11. PoH Info
+### 11. poh_balance
 
 ```typescript
 const pohBalance = await cloreai.pohBalance()
@@ -206,39 +207,21 @@ await cloreai.gigaspot.cancelOrders({
 })
 ```
 
-### Конфигурация запросов
+## Опции fetch
 
-Все методы принимают опциональную конфигурацию запроса для axios последним
-параметром, например:
+Все методы принимают опции для fetch последним параметром, например:
 
 ```typescript
 const marketplace = await cloreai.marketplace({
-  // axios config
+  // `RequestInit` options
 })
 ```
 
-### Доступ к экземпляру axios
-
-Используйте поле `cloreai.axios`.
-
-Обратитесь к документации [axios](https://github.com/axios/axios).
-
-### Доступ к экземплярам p-queue
-
-Используйте поля:
-
-- `cloreai.queue` - для основной очереди запросов
-- `cloreai.queueCreateOrder` - для очереди запросов createOrder
-- `cloreai.gigaspot.queue` - для очереди запросов gigaspot
-
-Обратитесь к документации [p-queue](https://github.com/sindresorhus/p-queue).
-
-### Обработка ошибок
+## Обработка ошибок
 
 Используйте класс `CloreaiError` для обработки ошибок.
 
-Этот класс наследуется от `AxiosError` и имеет дополнительные поля с информацией
-об ошибке `error.code` и `error.error`.
+Ошибки имеют поля с информацией `error.statusCode` и `error.description`.
 
 Для проверки типа ошибки используйте константу `statusCodes`.
 
@@ -249,9 +232,9 @@ try {
   const marketplace = await cloreai.marketplace()
 } catch (error) {
   if (error instanceof CloreaiError) {
-    console.log(error.code, error.error)
+    console.log(error.statusCode, error.description)
 
-    if (error.code === statusCodes.EXCEEDED) {
+    if (error.statusCode === statusCodes.EXCEEDED) {
       console.log('Rate limit exceeded error')
     }
   } else {
@@ -260,7 +243,7 @@ try {
 }
 ```
 
-### Rate limit
+## Rate limit
 
 Все методы защищены от превышения rate limit через
 [p-queue](https://github.com/sindresorhus/p-queue), они автоматически
@@ -269,22 +252,15 @@ try {
 Значения rate limit по умолчанию доступны как константы:
 
 ```typescript
-import {
-  RATE_LIMIT,
-  RATE_LIMIT_CREATE_ORDER,
-  RATE_LIMIT_GIGASPOT,
-} from 'cloreai'
+import { RATE_LIMIT, RATE_LIMIT_CREATE_ORDER } from 'cloreai'
 
 console.log(RATE_LIMIT)
 console.log(RATE_LIMIT_CREATE_ORDER)
-console.log(RATE_LIMIT_GIGASPOT)
 ```
 
 Можно задать собственные значение rate limit для каждой очереди запросов:
 
 ```typescript
-import Cloreai from 'cloreai'
-
 const cloreai = new Cloreai('API_KEY', {
   queueOptions: {
     interval: 2000, // For example 2 seconds
@@ -292,8 +268,54 @@ const cloreai = new Cloreai('API_KEY', {
   queueCreateOrderOptions: {
     interval: 6000, // For example 6 seconds
   },
-  queueGigaspotOptions: {
-    interval: 2000, // For example 2 seconds
+})
+```
+
+Доступ к экземплярам p-queue:
+
+- `cloreai.queue` - основная очередь запросов
+- `cloreai.queueCreateOrder` - очередь запросов createOrder
+
+## Retries
+
+Для повторных попыток рекомендуется использовать
+[p-retry](https://github.com/sindresorhus/p-retry):
+
+```typescript
+import pRetry from 'p-retry'
+
+const marketplace = await pRetry(
+  async () => {
+    return await cloreai.marketplace()
   },
+  {
+    retries: 5,
+  },
+)
+```
+
+## Timeouts
+
+Используйте `AbortSignal.timeout`.
+
+Опции signal из fetchOptions экземпляра и опций запроса комбинируются. В
+следующем примере запрос будет прерван через 5 секунд, но так же может быть
+прерван раньше при вызове `controller.abort()`.
+
+```typescript
+const cloreai = new Cloreai('API_KEY', {
+  fetchOptions: {
+    signal: AbortSignal.timeout(5000),
+  },
+})
+
+const controller = new AbortController()
+
+setTimeout(() => {
+  controller.abort()
+}, 10000)
+
+const marketplace = await cloreai.marketplace({
+  signal: controller.signal, // Combined with `AbortSignal.timeout(5000)`
 })
 ```

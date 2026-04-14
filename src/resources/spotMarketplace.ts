@@ -4,6 +4,17 @@ export interface SpotMarketplaceRequestParams {
   market: number
 }
 
+export interface SpotMarketplaceResponseData extends ResponseData {
+  market: SpotMarketplaceMarket
+  exists: boolean
+}
+
+export interface SpotMarketplaceMarket {
+  currency_rates_in_usd: Pricing
+  offers: SpotMarketplaceMarketOffer[]
+  server: SpotMarketplaceMarketServer
+}
+
 export interface SpotMarketplaceMarketOffer {
   offer_id: number
   bid: number
@@ -17,15 +28,4 @@ export interface SpotMarketplaceMarketServer {
   mrl: number
   online: boolean
   visibility: Visibility
-}
-
-export interface SpotMarketplaceMarket {
-  currency_rates_in_usd: Pricing
-  offers: SpotMarketplaceMarketOffer[]
-  server: SpotMarketplaceMarketServer
-}
-
-export interface SpotMarketplaceResponseData extends ResponseData {
-  market: SpotMarketplaceMarket
-  exists: boolean
 }

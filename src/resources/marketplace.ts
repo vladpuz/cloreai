@@ -1,5 +1,9 @@
 import type { Currency, Price, Rating, ResponseData, Specs } from '../types.ts'
 
+export interface MarketplaceResponseData extends ResponseData {
+  servers: MarketplaceServer[]
+}
+
 export interface MarketplaceServer {
   id: number
   owner: number
@@ -15,8 +19,4 @@ export interface MarketplaceServer {
   gigaspot?: boolean
   oc?: boolean
   cuda_version: string
-}
-
-export interface MarketplaceResponseData extends ResponseData {
-  servers: MarketplaceServer[]
 }

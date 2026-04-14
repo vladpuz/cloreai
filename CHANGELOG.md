@@ -1,3 +1,19 @@
+## 4.0.0
+
+- Axios has been removed and replaced with the native fetch! Class options have
+  been changed:
+  - Instead of `axiosOptions?: CreateAxiosDefaults`, now
+    `fetchOptions?: RequestInit`.
+  - New option `baseURL?: string`.
+  - New option `fetch?: typeof fetch`.
+- CloreaiError fields `error.code` and `error.error` renamed to
+  `error.statusCode` and `error.description`.
+- The gigaspot request queue has been removed. Now, gigaspot requests are
+  processed within the general queue:
+  - Option `queueGigaspotOptions?: QueueOptions` removed.
+  - Constant `RATE_LIMIT_GIGASPOT` removed.
+  - Field `gigaspot.queue` removed.
+
 ## 3.0.0
 
 - Changed typing to support payments in USDT and BTC.

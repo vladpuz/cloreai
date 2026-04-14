@@ -1,5 +1,16 @@
 import type { Currency, OrderType, ResponseData } from '../types.ts'
 
+export type CreateOrderRequestData = CreateOrderOnDemand | CreateOrderSpot
+
+export interface CreateOrderOnDemand extends CreateOrderBase {
+  type: 'on-demand'
+}
+
+export interface CreateOrderSpot extends CreateOrderBase {
+  type: 'spot'
+  spotprice: number
+}
+
 export interface CreateOrderBase {
   type: OrderType
   currency: Currency
@@ -16,16 +27,5 @@ export interface CreateOrderBase {
   remember_password?: boolean
   dockerhub_auth?: string
 }
-
-export interface CreateOrderOnDemand extends CreateOrderBase {
-  type: 'on-demand'
-}
-
-export interface CreateOrderSpot extends CreateOrderBase {
-  type: 'spot'
-  spotprice: number
-}
-
-export type CreateOrderRequestData = CreateOrderOnDemand | CreateOrderSpot
 
 export type CreateOrderResponseData = ResponseData

@@ -4,6 +4,11 @@ export interface MyOrdersRequestParams {
   return_completed?: boolean
 }
 
+export interface MyOrdersResponseData extends ResponseData {
+  orders: MyOrdersOrder[]
+  limit: number
+}
+
 export interface MyOrdersOrder {
   id: number
   creation_fee: number
@@ -31,9 +36,4 @@ export interface MyOrdersOrder {
   gpu_array: string[]
   spot?: boolean
   expired?: boolean
-}
-
-export interface MyOrdersResponseData extends ResponseData {
-  orders: MyOrdersOrder[]
-  limit: number
 }

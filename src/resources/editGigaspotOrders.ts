@@ -1,12 +1,12 @@
 import type { GigaspotOverclock, ResponseData } from '../types.ts'
 
+export type EditGigaspotOrdersRequestData = EditGigaspotOrdersOrder[]
+
 export interface EditGigaspotOrdersOrder {
   order_id: number
   price: number
   oc: GigaspotOverclock[]
 }
-
-export type EditGigaspotOrdersRequestData = EditGigaspotOrdersOrder[]
 
 export interface EditGigaspotOrdersResponseData extends ResponseData {
   success_to_update_ids: number[]

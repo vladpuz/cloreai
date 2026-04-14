@@ -1,24 +1,16 @@
 import type { Currency, Pricing, ResponseData } from '../types.ts'
 
-export interface GetGigaspotSnapshotServerBid {
-  owner: number
-  id: number
-  active: boolean
-  to_cache: boolean
-  cached: boolean
-  price: number
-  currency: Currency
-  pl: number
+export interface GetGigaspotResponseData extends GetGigaspotResponseDataBase {
+  snapshot: GetGigaspotSnapshot
 }
 
-export interface GetGigaspotSnapshotServerGpu {
-  pl: [number, number]
-  mem_lock: [number, number]
-  core_lock: [number, number]
-  mem_offset: [number, number]
-  core_offset: [number, number]
-  model: string
+export interface GetGigaspotResponseDataBase extends ResponseData {
+  my_user_id: number
+  v1_snapshot_url: string
+  creation_fees: Pricing
 }
+
+export type GetGigaspotSnapshot = Record<string, GetGigaspotSnapshotServer>
 
 export interface GetGigaspotSnapshotServer {
   bids: GetGigaspotSnapshotServerBid[]
@@ -39,14 +31,22 @@ export interface GetGigaspotSnapshotServer {
   energy_price: number
 }
 
-export type GetGigaspotSnapshot = Record<string, GetGigaspotSnapshotServer>
-
-export interface GetGigaspotResponseDataBase extends ResponseData {
-  my_user_id: number
-  v1_snapshot_url: string
-  creation_fees: Pricing
+export interface GetGigaspotSnapshotServerBid {
+  owner: number
+  id: number
+  active: boolean
+  to_cache: boolean
+  cached: boolean
+  price: number
+  currency: Currency
+  pl: number
 }
 
-export interface GetGigaspotResponseData extends GetGigaspotResponseDataBase {
-  snapshot: GetGigaspotSnapshot
+export interface GetGigaspotSnapshotServerGpu {
+  pl: [number, number]
+  mem_lock: [number, number]
+  core_lock: [number, number]
+  mem_offset: [number, number]
+  core_offset: [number, number]
+  model: string
 }

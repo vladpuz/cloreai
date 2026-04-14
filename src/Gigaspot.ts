@@ -1,93 +1,109 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
-import PQueue from 'p-queue'
+import type PQueue from 'p-queue'
 
-import type { Options } from './Cloreai.ts'
 import type { CancelOrdersRequestData, CancelOrdersResponseData } from './resources/cancelOrders.ts'
 import type { CreateGigaspotOrdersRequestData, CreateGigaspotOrdersResponseData } from './resources/createGigaspotOrders.ts'
 import type { EditGigaspotOrdersRequestData, EditGigaspotOrdersResponseData } from './resources/editGigaspotOrders.ts'
 import type { GetGigaspotResponseData, GetGigaspotResponseDataBase, GetGigaspotSnapshot } from './resources/getGigaspot.ts'
 
-import { priorityLevels, RATE_LIMIT_GIGASPOT } from './constants.ts'
-import { getQueueOptions } from './getQueueOptions.ts'
+import { priorityLevels } from './constants.ts'
+
+/* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
 
 class Gigaspot {
-  axios: AxiosInstance
-  queue: PQueue
+  #queue: PQueue
+  #baseURL: string
+  #fetch: typeof fetch
 
-  constructor(options: Options, axios: AxiosInstance) {
-    this.queue = new PQueue({
-      interval: RATE_LIMIT_GIGASPOT,
-      intervalCap: 1,
-      concurrency: 1,
-      ...options.queueGigaspotOptions,
-    })
-
-    this.axios = axios
+  constructor(queue: PQueue, baseURL: string, fetchFunction: typeof fetch) {
+    this.#queue = queue
+    this.#baseURL = baseURL
+    this.#fetch = fetchFunction
   }
 
   async getGigaspot(
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<GetGigaspotResponseData> {
-    return await this.queue.add(async () => {
-      const response = await this.axios.get<GetGigaspotResponseDataBase>(
-        '/get_gigaspot',
-        config,
-      )
+    const url = new URL(this.#baseURL + '/get_gigaspot')
 
-      const snapshot = await axios.get<GetGigaspotSnapshot>(
-        response.data.v1_snapshot_url,
-      )
+    const response = await this.#queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'GET',
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
 
-      return {
-        ...response.data,
-        snapshot: snapshot.data,
-      }
-    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
+    const data = await response.json() as GetGigaspotResponseDataBase
+
+    const snapshotResponse = await fetch(data.v1_snapshot_url)
+    const snapshotData = await snapshotResponse.json() as GetGigaspotSnapshot
+
+    return {
+      ...data,
+      snapshot: snapshotData,
+    }
   }
 
   async createGigaspotOrders(
     data: CreateGigaspotOrdersRequestData,
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<CreateGigaspotOrdersResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.post<CreateGigaspotOrdersResponseData>(
-        '/create_gigaspot_orders',
-        data,
-        config,
-      )
-    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
+    const url = new URL(this.#baseURL + '/create_gigaspot_orders')
 
-    return response.data
+    const response = await this.#queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.HIGH,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as CreateGigaspotOrdersResponseData
   }
 
   async editGigaspotOrders(
     data: EditGigaspotOrdersRequestData,
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<EditGigaspotOrdersResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.post<EditGigaspotOrdersResponseData>(
-        '/edit_gigaspot_orders',
-        data,
-        config,
-      )
-    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
+    const url = new URL(this.#baseURL + '/edit_gigaspot_orders')
 
-    return response.data
+    const response = await this.#queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.HIGH,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as EditGigaspotOrdersResponseData
   }
 
   async cancelOrders(
     data: CancelOrdersRequestData,
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<CancelOrdersResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.post<CancelOrdersResponseData>(
-        '/cancel_orders',
-        data,
-        config,
-      )
-    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
+    const url = new URL(this.#baseURL + '/cancel_orders')
 
-    return response.data
+    const response = await this.#queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.HIGH,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as CancelOrdersResponseData
   }
 }
 

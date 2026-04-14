@@ -4,11 +4,9 @@ export interface ServerConfigRequestData {
   server_name: string
 }
 
-export interface ServerConfigBackgroundJob {
-  times_updated: number
-  image: string
-  command: string
-  env: Record<string, string>
+export interface ServerConfigResponseData extends ResponseData {
+  config: ServerConfig
+  creation_completed: boolean
 }
 
 export interface ServerConfig {
@@ -29,7 +27,9 @@ export interface ServerConfig {
   usd_pricing: PricingInOriginalUsd
 }
 
-export interface ServerConfigResponseData extends ResponseData {
-  config: ServerConfig
-  creation_completed: boolean
+export interface ServerConfigBackgroundJob {
+  times_updated: number
+  image: string
+  command: string
+  env: Record<string, string>
 }

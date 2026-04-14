@@ -1,4 +1,3 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type CreateAxiosDefaults } from 'axios'
 import PQueue, { type Options as PQueueOptions, type Queue, type QueueAddOptions } from 'p-queue'
 
 import type { CancelOrderRequestData, CancelOrderResponseData } from './resources/cancelOrder.ts'
@@ -17,28 +16,126 @@ import type { ResponseData } from './types.ts'
 
 import { CloreaiError } from './CloreaiError.ts'
 import { priorityLevels, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER, statusCodes } from './constants.ts'
-import { getQueueOptions } from './getQueueOptions.ts'
 import Gigaspot from './Gigaspot.ts'
+
+/* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
+
+export interface Options {
+  baseURL?: string
+  fetch?: typeof fetch
+  fetchOptions?: RequestInit
+  queueOptions?: QueueOptions
+  queueCreateOrderOptions?: QueueOptions
+}
 
 export type QueueOptions = PQueueOptions<
   Queue<() => Promise<unknown>, QueueAddOptions>,
   QueueAddOptions
 >
 
-export interface Options {
-  axiosOptions?: CreateAxiosDefaults
-  queueOptions?: QueueOptions
-  queueCreateOrderOptions?: QueueOptions
-  queueGigaspotOptions?: QueueOptions
-}
-
 class Cloreai {
-  axios: AxiosInstance
   queue: PQueue
   queueCreateOrder: PQueue
   gigaspot: Gigaspot
 
+  #baseURL: string
+  #fetch: typeof fetch
+
   constructor(apiKey: string, options: Options = {}) {
+    this.#baseURL = options.baseURL ?? 'https://api.clore.ai/v1'
+
+    const fetchFunction = options.fetch ?? fetch
+    const fetchOptions = options.fetchOptions ?? {}
+
+    this.#fetch = async (input, init = {}) => {
+      if (input instanceof Request) {
+        throw new TypeError('Input must be a string or URL')
+      }
+
+      const headers = new Headers({
+        'Content-Type': 'application/json',
+        'auth': apiKey,
+      })
+
+      for (const [key, value] of new Headers(fetchOptions.headers)) {
+        headers.set(key, value)
+      }
+
+      for (const [key, value] of new Headers(init.headers)) {
+        headers.set(key, value)
+      }
+
+      const signal = AbortSignal.any([
+        ...(fetchOptions.signal ? [fetchOptions.signal] : []),
+        ...(init.signal ? [init.signal] : []),
+      ])
+
+      const mergedInit: RequestInit = {
+        ...fetchOptions,
+        ...init,
+        headers,
+        signal,
+      }
+
+      const url = new URL(input)
+      const request = new Request(url, mergedInit)
+      let response: Response
+
+      try {
+        response = await fetchFunction(request)
+      } catch (error) {
+        throw new CloreaiError(
+          error instanceof Error ? error.message : String(error),
+          {
+            cause: error,
+            init: mergedInit,
+            request,
+          },
+        )
+      }
+
+      const originalJson = response.json
+
+      // @ts-expect-error: json is readonly
+      response.json = async () => {
+        let data: ResponseData
+
+        try {
+          data = await originalJson.call(response) as ResponseData
+        } catch (error) {
+          throw new CloreaiError(
+            error instanceof Error ? error.message : String(error),
+            {
+              cause: error,
+              init: mergedInit,
+              request,
+              response,
+            },
+          )
+        }
+
+        if (data.code === statusCodes.NORMAL) {
+          return data
+        }
+
+        const hasError = Boolean(data.error)
+        const errorMessage = hasError
+          ? `Code "${data.code}, error "${data.error}"`
+          : `Code "${data.code}"`
+
+        throw new CloreaiError(errorMessage, {
+          init: mergedInit,
+          request,
+          response,
+          statusCode: data.code,
+          description: data.error ?? '',
+          data,
+        })
+      }
+
+      return response
+    }
+
     this.queue = new PQueue({
       interval: RATE_LIMIT,
       intervalCap: 1,
@@ -53,208 +150,243 @@ class Cloreai {
       ...options.queueCreateOrderOptions,
     })
 
-    this.axios = axios.create({
-      baseURL: 'https://api.clore.ai/v1',
-      ...options.axiosOptions,
-    })
-
-    this.axios.interceptors.request.use((request) => {
-      request.headers.set('auth', apiKey)
-      return request
-    })
-
-    this.axios.interceptors.response.use(
-      (response: AxiosResponse<ResponseData>) => {
-        if (response.data.code === statusCodes.NORMAL) {
-          return response
-        }
-
-        const errorMessage = `Code "${response.data.code}"`
-
-        const error = new CloreaiError(errorMessage, {
-          code: String(response.data.code),
-          config: response.config,
-          request: response.request,
-          response,
-        })
-
-        if (response.data.error != null) {
-          error.message += `, error "${response.data.error}"`
-          error.error = response.data.error
-        }
-
-        throw error
-      },
-    )
-
-    this.gigaspot = new Gigaspot(options, this.axios)
+    this.gigaspot = new Gigaspot(this.queue, this.#baseURL, this.#fetch)
   }
 
   async wallets(
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<WalletsResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.get<WalletsResponseData>(
-        '/wallets',
-        config,
-      )
-    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
+    const url = new URL(this.#baseURL + '/wallets')
 
-    return response.data
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'GET',
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as WalletsResponseData
   }
 
   async myServers(
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<MyServersResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.get<MyServersResponseData>(
-        '/my_servers',
-        config,
-      )
-    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
+    const url = new URL(this.#baseURL + '/my_servers')
 
-    return response.data
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'GET',
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as MyServersResponseData
   }
 
   async serverConfig(
     data: ServerConfigRequestData,
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<ServerConfigResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.get<ServerConfigResponseData>(
-        '/server_config',
-        { ...config, data },
-      )
-    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
+    const url = new URL(this.#baseURL + '/server_config')
 
-    return response.data
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'GET',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as ServerConfigResponseData
   }
 
   async marketplace(
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<MarketplaceResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.get<MarketplaceResponseData>(
-        '/marketplace',
-        config,
-      )
-    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
+    const url = new URL(this.#baseURL + '/marketplace')
 
-    return response.data
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'GET',
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as MarketplaceResponseData
   }
 
   async myOrders(
-    params?: MyOrdersRequestParams,
-    config?: AxiosRequestConfig,
+    params: MyOrdersRequestParams = {},
+    init: RequestInit = {},
   ): Promise<MyOrdersResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.get<MyOrdersResponseData>(
-        '/my_orders',
-        { ...config, params },
-      )
-    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
+    const url = new URL(this.#baseURL + '/my_orders')
 
-    return response.data
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, String(value))
+    }
+
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'GET',
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as MyOrdersResponseData
   }
 
   async spotMarketplace(
     params: SpotMarketplaceRequestParams,
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<SpotMarketplaceResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.get<SpotMarketplaceResponseData>(
-        '/spot_marketplace',
-        { ...config, params },
-      )
-    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
+    const url = new URL(this.#baseURL + '/spot_marketplace')
 
-    return response.data
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, String(value))
+    }
+
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'GET',
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as SpotMarketplaceResponseData
   }
 
   async setServerSettings(
     data: SetServerSettingsRequestData,
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<SetServerSettingsResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.post<SetServerSettingsResponseData>(
-        '/set_server_settings',
-        data,
-        config,
-      )
-    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
+    const url = new URL(this.#baseURL + '/set_server_settings')
 
-    return response.data
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.HIGH,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as SetServerSettingsResponseData
   }
 
   async setSpotPrice(
     data: SetSpotPriceRequestData,
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<SetSpotPriceResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.post<SetSpotPriceResponseData>(
-        '/set_spot_price',
-        data,
-        config,
-      )
-    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
+    const url = new URL(this.#baseURL + '/set_spot_price')
 
-    return response.data
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.HIGH,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as SetSpotPriceResponseData
   }
 
   async cancelOrder(
     data: CancelOrderRequestData,
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<CancelOrderResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.post<CancelOrderResponseData>(
-        '/cancel_order',
-        data,
-        config,
-      )
-    }, getQueueOptions(priorityLevels.HIGH, this.axios, config))
+    const url = new URL(this.#baseURL + '/cancel_order')
 
-    return response.data
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.HIGH,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as CancelOrderResponseData
   }
 
   async createOrder(
     data: CreateOrderRequestData,
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<CreateOrderResponseData> {
-    const response = await this.queueCreateOrder.add(async () => {
-      return await this.axios.post<CreateOrderResponseData>(
-        '/create_order',
-        data,
-        config,
-      )
-    }, getQueueOptions(priorityLevels.HIGHEST, this.axios, config))
+    const url = new URL(this.#baseURL + '/create_order')
 
-    return response.data
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.HIGHEST,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as CreateOrderResponseData
   }
 
   async pohBalance(
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<PohBalanceResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.get<PohBalanceResponseData>(
-        '/poh_balance',
-        config,
-      )
-    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
+    const url = new URL(this.#baseURL + '/poh_balance')
 
-    return response.data
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'GET',
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as PohBalanceResponseData
   }
 
   async renterFees(
-    config?: AxiosRequestConfig,
+    init: RequestInit = {},
   ): Promise<RenterFeesResponseData> {
-    const response = await this.queue.add(async () => {
-      return await this.axios.get<RenterFeesResponseData>(
-        '/renter_fees',
-        config,
-      )
-    }, getQueueOptions(priorityLevels.NORMAL, this.axios, config))
+    const url = new URL(this.#baseURL + '/renter_fees')
 
-    return response.data
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'GET',
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as RenterFeesResponseData
   }
 }
 

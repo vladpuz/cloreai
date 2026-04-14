@@ -1,5 +1,7 @@
 import type { Currency, GigaspotOverclock, ResponseData } from '../types.ts'
 
+export type CreateGigaspotOrdersRequestData = CreateGigaspotOrdersOrder[]
+
 export interface CreateGigaspotOrdersOrder {
   currency: Currency
   image: string
@@ -8,8 +10,6 @@ export interface CreateGigaspotOrdersOrder {
   oc: GigaspotOverclock[]
   env?: Record<string, string>
 }
-
-export type CreateGigaspotOrdersRequestData = CreateGigaspotOrdersOrder[]
 
 export interface CreateGigaspotOrdersResponseData extends ResponseData {
   failed_to_oc_servers: number[]
