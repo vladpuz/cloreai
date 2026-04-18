@@ -1,3 +1,8 @@
+## 4.0.1
+
+- Class fields `baseURL`, `fetchOptions`, `fetch` are now public and can be
+  changed at runtime.
+
 ## 4.0.0
 
 - Axios has been removed and replaced with the native fetch! Class options have

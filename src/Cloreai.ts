@@ -22,8 +22,8 @@ import Gigaspot from './Gigaspot.ts'
 
 export interface Options {
   baseURL?: string
-  fetch?: typeof fetch
   fetchOptions?: RequestInit
+  fetch?: typeof fetch
   queueOptions?: QueueOptions
   queueCreateOrderOptions?: QueueOptions
 }
@@ -34,107 +34,19 @@ export type QueueOptions = PQueueOptions<
 >
 
 class Cloreai {
+  baseURL: string
+  fetchOptions: RequestInit
+  fetch: typeof fetch
   queue: PQueue
   queueCreateOrder: PQueue
   gigaspot: Gigaspot
 
-  #baseURL: string
-  #fetch: typeof fetch
+  #apiKey: string
 
   constructor(apiKey: string, options: Options = {}) {
-    this.#baseURL = options.baseURL ?? 'https://api.clore.ai/v1'
-
-    const fetchFunction = options.fetch ?? fetch
-    const fetchOptions = options.fetchOptions ?? {}
-
-    this.#fetch = async (input, init = {}) => {
-      if (input instanceof Request) {
-        throw new TypeError('Input must be a string or URL')
-      }
-
-      const headers = new Headers({
-        'Content-Type': 'application/json',
-        'auth': apiKey,
-      })
-
-      for (const [key, value] of new Headers(fetchOptions.headers)) {
-        headers.set(key, value)
-      }
-
-      for (const [key, value] of new Headers(init.headers)) {
-        headers.set(key, value)
-      }
-
-      const signal = AbortSignal.any([
-        ...(fetchOptions.signal ? [fetchOptions.signal] : []),
-        ...(init.signal ? [init.signal] : []),
-      ])
-
-      const mergedInit: RequestInit = {
-        ...fetchOptions,
-        ...init,
-        headers,
-        signal,
-      }
-
-      const url = new URL(input)
-      const request = new Request(url, mergedInit)
-      let response: Response
-
-      try {
-        response = await fetchFunction(request)
-      } catch (error) {
-        throw new CloreaiError(
-          error instanceof Error ? error.message : String(error),
-          {
-            cause: error,
-            init: mergedInit,
-            request,
-          },
-        )
-      }
-
-      const originalJson = response.json
-
-      // @ts-expect-error: json is readonly
-      response.json = async () => {
-        let data: ResponseData
-
-        try {
-          data = await originalJson.call(response) as ResponseData
-        } catch (error) {
-          throw new CloreaiError(
-            error instanceof Error ? error.message : String(error),
-            {
-              cause: error,
-              init: mergedInit,
-              request,
-              response,
-            },
-          )
-        }
-
-        if (data.code === statusCodes.NORMAL) {
-          return data
-        }
-
-        const hasError = Boolean(data.error)
-        const errorMessage = hasError
-          ? `Code "${data.code}, error "${data.error}"`
-          : `Code "${data.code}"`
-
-        throw new CloreaiError(errorMessage, {
-          init: mergedInit,
-          request,
-          response,
-          statusCode: data.code,
-          description: data.error ?? '',
-          data,
-        })
-      }
-
-      return response
-    }
+    this.baseURL = options.baseURL ?? 'https://api.clore.ai/v1'
+    this.fetchOptions = options.fetchOptions ?? {}
+    this.fetch = options.fetch ?? fetch
 
     this.queue = new PQueue({
       interval: RATE_LIMIT,
@@ -150,13 +62,100 @@ class Cloreai {
       ...options.queueCreateOrderOptions,
     })
 
-    this.gigaspot = new Gigaspot(this.queue, this.#baseURL, this.#fetch)
+    this.gigaspot = new Gigaspot(this, this.#fetch.bind(this))
+
+    this.#apiKey = apiKey
+  }
+
+  async #fetch(input: string | URL, init: RequestInit = {}): Promise<Response> {
+    const headers = new Headers({
+      'Content-Type': 'application/json',
+      'auth': this.#apiKey,
+    })
+
+    for (const [key, value] of new Headers(this.fetchOptions.headers)) {
+      headers.set(key, value)
+    }
+
+    for (const [key, value] of new Headers(init.headers)) {
+      headers.set(key, value)
+    }
+
+    const signal = AbortSignal.any([
+      ...(this.fetchOptions.signal ? [this.fetchOptions.signal] : []),
+      ...(init.signal ? [init.signal] : []),
+    ])
+
+    const mergedInit: RequestInit = {
+      ...this.fetchOptions,
+      ...init,
+      headers,
+      signal,
+    }
+
+    const url = new URL(input)
+    const request = new Request(url, mergedInit)
+    let response: Response
+
+    try {
+      response = await this.fetch(request)
+    } catch (error) {
+      throw new CloreaiError(
+        error instanceof Error ? error.message : String(error),
+        {
+          cause: error,
+          init: mergedInit,
+          request,
+        },
+      )
+    }
+
+    const originalJson = response.json
+
+    // @ts-expect-error: json is readonly
+    response.json = async () => {
+      let data: ResponseData
+
+      try {
+        data = await originalJson.call(response) as ResponseData
+      } catch (error) {
+        throw new CloreaiError(
+          error instanceof Error ? error.message : String(error),
+          {
+            cause: error,
+            init: mergedInit,
+            request,
+            response,
+          },
+        )
+      }
+
+      if (data.code === statusCodes.NORMAL) {
+        return data
+      }
+
+      const hasError = Boolean(data.error)
+      const errorMessage = hasError
+        ? `Code "${data.code}, error "${data.error}"`
+        : `Code "${data.code}"`
+
+      throw new CloreaiError(errorMessage, {
+        init: mergedInit,
+        request,
+        response,
+        statusCode: data.code,
+        description: data.error ?? '',
+        data,
+      })
+    }
+
+    return response
   }
 
   async wallets(
     init: RequestInit = {},
   ): Promise<WalletsResponseData> {
-    const url = new URL(this.#baseURL + '/wallets')
+    const url = new URL(this.baseURL + '/wallets')
 
     const response = await this.queue.add(async () => {
       return await this.#fetch(url, {
@@ -174,7 +173,7 @@ class Cloreai {
   async myServers(
     init: RequestInit = {},
   ): Promise<MyServersResponseData> {
-    const url = new URL(this.#baseURL + '/my_servers')
+    const url = new URL(this.baseURL + '/my_servers')
 
     const response = await this.queue.add(async () => {
       return await this.#fetch(url, {
@@ -193,7 +192,7 @@ class Cloreai {
     data: ServerConfigRequestData,
     init: RequestInit = {},
   ): Promise<ServerConfigResponseData> {
-    const url = new URL(this.#baseURL + '/server_config')
+    const url = new URL(this.baseURL + '/server_config')
 
     const response = await this.queue.add(async () => {
       return await this.#fetch(url, {
@@ -212,7 +211,7 @@ class Cloreai {
   async marketplace(
     init: RequestInit = {},
   ): Promise<MarketplaceResponseData> {
-    const url = new URL(this.#baseURL + '/marketplace')
+    const url = new URL(this.baseURL + '/marketplace')
 
     const response = await this.queue.add(async () => {
       return await this.#fetch(url, {
@@ -231,7 +230,7 @@ class Cloreai {
     params: MyOrdersRequestParams = {},
     init: RequestInit = {},
   ): Promise<MyOrdersResponseData> {
-    const url = new URL(this.#baseURL + '/my_orders')
+    const url = new URL(this.baseURL + '/my_orders')
 
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, String(value))
@@ -254,7 +253,7 @@ class Cloreai {
     params: SpotMarketplaceRequestParams,
     init: RequestInit = {},
   ): Promise<SpotMarketplaceResponseData> {
-    const url = new URL(this.#baseURL + '/spot_marketplace')
+    const url = new URL(this.baseURL + '/spot_marketplace')
 
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, String(value))
@@ -277,7 +276,7 @@ class Cloreai {
     data: SetServerSettingsRequestData,
     init: RequestInit = {},
   ): Promise<SetServerSettingsResponseData> {
-    const url = new URL(this.#baseURL + '/set_server_settings')
+    const url = new URL(this.baseURL + '/set_server_settings')
 
     const response = await this.queue.add(async () => {
       return await this.#fetch(url, {
@@ -297,7 +296,7 @@ class Cloreai {
     data: SetSpotPriceRequestData,
     init: RequestInit = {},
   ): Promise<SetSpotPriceResponseData> {
-    const url = new URL(this.#baseURL + '/set_spot_price')
+    const url = new URL(this.baseURL + '/set_spot_price')
 
     const response = await this.queue.add(async () => {
       return await this.#fetch(url, {
@@ -317,7 +316,7 @@ class Cloreai {
     data: CancelOrderRequestData,
     init: RequestInit = {},
   ): Promise<CancelOrderResponseData> {
-    const url = new URL(this.#baseURL + '/cancel_order')
+    const url = new URL(this.baseURL + '/cancel_order')
 
     const response = await this.queue.add(async () => {
       return await this.#fetch(url, {
@@ -337,7 +336,7 @@ class Cloreai {
     data: CreateOrderRequestData,
     init: RequestInit = {},
   ): Promise<CreateOrderResponseData> {
-    const url = new URL(this.#baseURL + '/create_order')
+    const url = new URL(this.baseURL + '/create_order')
 
     const response = await this.queue.add(async () => {
       return await this.#fetch(url, {
@@ -356,7 +355,7 @@ class Cloreai {
   async pohBalance(
     init: RequestInit = {},
   ): Promise<PohBalanceResponseData> {
-    const url = new URL(this.#baseURL + '/poh_balance')
+    const url = new URL(this.baseURL + '/poh_balance')
 
     const response = await this.queue.add(async () => {
       return await this.#fetch(url, {
@@ -374,7 +373,7 @@ class Cloreai {
   async renterFees(
     init: RequestInit = {},
   ): Promise<RenterFeesResponseData> {
-    const url = new URL(this.#baseURL + '/renter_fees')
+    const url = new URL(this.baseURL + '/renter_fees')
 
     const response = await this.queue.add(async () => {
       return await this.#fetch(url, {

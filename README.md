@@ -31,8 +31,8 @@ import Cloreai from 'cloreai'
 
 const cloreai = new Cloreai('API_KEY', {
   baseURL: 'https://api.clore.ai/v1', // (optional) Override the default base URL for the API
-  fetch: globalThis.fetch, // (optional) Specify a custom `fetch` function implementation
   fetchOptions: {}, // (optional) Additional `RequestInit` options to be passed to `fetch` calls
+  fetch: globalThis.fetch, // (optional) Specify a custom `fetch` function implementation
   queueOptions: {}, // (optional) Queue instance options https://github.com/sindresorhus/p-queue
   queueCreateOrderOptions: {}, // (optional) Create order queue instance options https://github.com/sindresorhus/p-queue
 })
@@ -296,26 +296,25 @@ const marketplace = await pRetry(
 
 ## Timeouts
 
-Use `AbortSignal.timeout`.
-
-Options signal from fetchOptions and request options are combined. In the
-following example, the request will be aborted after 5 seconds, but it can also
-be aborted earlier by calling `controller.abort()`.
+Use `AbortSignal.timeout`:
 
 ```typescript
-const cloreai = new Cloreai('API_KEY', {
-  fetchOptions: {
-    signal: AbortSignal.timeout(5000),
-  },
+const marketplace = await cloreai.marketplace({
+  signal: AbortSignal.timeout(5000),
 })
+```
 
+Combine signals using `AbortSignal.any`. In the following example, the request
+will be aborted after 5 seconds, but can also be aborted earlier by calling
+`controller.abort()`:
+
+```typescript
 const controller = new AbortController()
 
-setTimeout(() => {
-  controller.abort()
-}, 10000)
+// You can abort by event
+// controller.abort()
 
 const marketplace = await cloreai.marketplace({
-  signal: controller.signal, // Combined with `AbortSignal.timeout(5000)`
+  signal: AbortSignal.any([AbortSignal.timeout(5000), controller.signal]),
 })
 ```

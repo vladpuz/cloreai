@@ -1,5 +1,4 @@
-import type PQueue from 'p-queue'
-
+import type Cloreai from './Cloreai.ts'
 import type { CancelOrdersRequestData, CancelOrdersResponseData } from './resources/cancelOrders.ts'
 import type { CreateGigaspotOrdersRequestData, CreateGigaspotOrdersResponseData } from './resources/createGigaspotOrders.ts'
 import type { EditGigaspotOrdersRequestData, EditGigaspotOrdersResponseData } from './resources/editGigaspotOrders.ts'
@@ -9,23 +8,23 @@ import { priorityLevels } from './constants.ts'
 
 /* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
 
-class Gigaspot {
-  #queue: PQueue
-  #baseURL: string
-  #fetch: typeof fetch
+type Fetch = (input: string | URL, init?: RequestInit) => Promise<Response>
 
-  constructor(queue: PQueue, baseURL: string, fetchFunction: typeof fetch) {
-    this.#queue = queue
-    this.#baseURL = baseURL
-    this.#fetch = fetchFunction
+class Gigaspot {
+  #cloreai: Cloreai
+  #fetch: Fetch
+
+  constructor(cloreai: Cloreai, fetch: Fetch) {
+    this.#cloreai = cloreai
+    this.#fetch = fetch
   }
 
   async getGigaspot(
     init: RequestInit = {},
   ): Promise<GetGigaspotResponseData> {
-    const url = new URL(this.#baseURL + '/get_gigaspot')
+    const url = new URL(this.#cloreai.baseURL + '/get_gigaspot')
 
-    const response = await this.#queue.add(async () => {
+    const response = await this.#cloreai.queue.add(async () => {
       return await this.#fetch(url, {
         ...init,
         method: 'GET',
@@ -50,9 +49,9 @@ class Gigaspot {
     data: CreateGigaspotOrdersRequestData,
     init: RequestInit = {},
   ): Promise<CreateGigaspotOrdersResponseData> {
-    const url = new URL(this.#baseURL + '/create_gigaspot_orders')
+    const url = new URL(this.#cloreai.baseURL + '/create_gigaspot_orders')
 
-    const response = await this.#queue.add(async () => {
+    const response = await this.#cloreai.queue.add(async () => {
       return await this.#fetch(url, {
         ...init,
         method: 'POST',
@@ -70,9 +69,9 @@ class Gigaspot {
     data: EditGigaspotOrdersRequestData,
     init: RequestInit = {},
   ): Promise<EditGigaspotOrdersResponseData> {
-    const url = new URL(this.#baseURL + '/edit_gigaspot_orders')
+    const url = new URL(this.#cloreai.baseURL + '/edit_gigaspot_orders')
 
-    const response = await this.#queue.add(async () => {
+    const response = await this.#cloreai.queue.add(async () => {
       return await this.#fetch(url, {
         ...init,
         method: 'POST',
@@ -90,9 +89,9 @@ class Gigaspot {
     data: CancelOrdersRequestData,
     init: RequestInit = {},
   ): Promise<CancelOrdersResponseData> {
-    const url = new URL(this.#baseURL + '/cancel_orders')
+    const url = new URL(this.#cloreai.baseURL + '/cancel_orders')
 
-    const response = await this.#queue.add(async () => {
+    const response = await this.#cloreai.queue.add(async () => {
       return await this.#fetch(url, {
         ...init,
         method: 'POST',
