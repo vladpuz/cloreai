@@ -34,6 +34,7 @@ export type QueueOptions = PQueueOptions<
 >
 
 class Cloreai {
+  apiKey: string
   baseURL: string
   fetchOptions: RequestInit
   fetch: typeof fetch
@@ -41,9 +42,8 @@ class Cloreai {
   queueCreateOrder: PQueue
   gigaspot: Gigaspot
 
-  #apiKey: string
-
   constructor(apiKey: string, options: Options = {}) {
+    this.apiKey = apiKey
     this.baseURL = options.baseURL ?? 'https://api.clore.ai/v1'
     this.fetchOptions = options.fetchOptions ?? {}
     this.fetch = options.fetch ?? fetch
@@ -63,14 +63,12 @@ class Cloreai {
     })
 
     this.gigaspot = new Gigaspot(this, this.#fetch.bind(this))
-
-    this.#apiKey = apiKey
   }
 
   async #fetch(input: string | URL, init: RequestInit = {}): Promise<Response> {
     const headers = new Headers({
       'Content-Type': 'application/json',
-      'auth': this.#apiKey,
+      'auth': this.apiKey,
     })
 
     for (const [key, value] of new Headers(this.fetchOptions.headers)) {
