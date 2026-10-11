@@ -13,18 +13,22 @@ export interface MyOrdersOrder {
   id: number
   creation_fee: number
   price: number
+  oc_price: number
+  original_price_usd?: number
   mrl: number
   image: string
   currency: Currency
-  original_price_usd?: number
   spend: number
   ct: number
+  p: number
   specs: Specs
+  gpu_count: number
+  total_gpus: number
+  gpu_array: string[]
   si: number
   my_past_rating?: number
   auto_login: string
   mon_container: number
-  online: boolean
   pub_cluster: string[]
   tcp_ports: string[]
   http_port: string
@@ -33,7 +37,8 @@ export interface MyOrdersOrder {
   reliability: number
   owner: number
   cuda_version: string
-  gpu_array: string[]
   spot?: boolean
   expired?: boolean
+  paused?: boolean
+  online: boolean
 }

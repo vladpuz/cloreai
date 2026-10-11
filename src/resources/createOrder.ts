@@ -24,8 +24,12 @@ export interface CreateOrderBase {
   command?: string
   required_price?: number
   autossh_entrypoint?: boolean
-  remember_password?: boolean
+  remember_passwords?: boolean
   dockerhub_auth?: string
+  gpu_count?: number
+  gpu_indices?: number[]
 }
 
-export type CreateOrderResponseData = ResponseData
+export interface CreateOrderResponseData extends ResponseData {
+  min_price?: number
+}

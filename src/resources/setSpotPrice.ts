@@ -5,19 +5,8 @@ export interface SetSpotPriceRequestData {
   desired_price: number
 }
 
-export type SetSpotPriceResponseData
-  = | SetSpotPriceMaxStep
-    | SetSpotPriceTimeToLowering
-    | SetSpotPriceNormal
-
-export interface SetSpotPriceMaxStep extends ResponseData {
-  error: 'exceeded_max_step'
-  max_step: number
+export interface SetSpotPriceResponseData extends ResponseData {
+  max_step?: number
+  time_to_lowering?: number
+  min_price?: number
 }
-
-export interface SetSpotPriceTimeToLowering extends ResponseData {
-  error: 'can_lower_every_600_seconds'
-  time_to_lowering: number
-}
-
-export type SetSpotPriceNormal = Omit<ResponseData, 'error'>

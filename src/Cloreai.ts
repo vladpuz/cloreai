@@ -1,6 +1,7 @@
 import PQueue, { type Options as PQueueOptions, type Queue, type QueueAddOptions } from 'p-queue'
 
 import type { CancelOrderRequestData, CancelOrderResponseData } from './resources/cancelOrder.ts'
+import type { CancelOrdersRequestData, CancelOrdersResponseData } from './resources/cancelOrders.ts'
 import type { CreateOrderRequestData, CreateOrderResponseData } from './resources/createOrder.ts'
 import type { MarketplaceResponseData } from './resources/marketplace.ts'
 import type { MyOrdersRequestParams, MyOrdersResponseData } from './resources/myOrders.ts'
@@ -16,7 +17,6 @@ import type { ResponseData } from './types.ts'
 
 import { CloreaiError } from './CloreaiError.ts'
 import { priorityLevels, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER, statusCodes } from './constants.ts'
-import Gigaspot from './Gigaspot.ts'
 
 /* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
 
@@ -40,7 +40,6 @@ class Cloreai {
   fetch: typeof fetch
   queue: PQueue
   queueCreateOrder: PQueue
-  gigaspot: Gigaspot
 
   constructor(apiKey: string, options: Options = {}) {
     this.apiKey = apiKey
@@ -61,8 +60,6 @@ class Cloreai {
       concurrency: 1,
       ...options.queueCreateOrderOptions,
     })
-
-    this.gigaspot = new Gigaspot(this, this.#fetch.bind(this))
   }
 
   async #fetch(input: string | URL, init: RequestInit = {}): Promise<Response> {
@@ -330,13 +327,33 @@ class Cloreai {
     return await response.json() as CancelOrderResponseData
   }
 
+  async cancelOrders(
+    data: CancelOrdersRequestData,
+    init: RequestInit = {},
+  ): Promise<CancelOrdersResponseData> {
+    const url = new URL(this.baseURL + '/cancel_orders')
+
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.HIGH,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as CancelOrdersResponseData
+  }
+
   async createOrder(
     data: CreateOrderRequestData,
     init: RequestInit = {},
   ): Promise<CreateOrderResponseData> {
     const url = new URL(this.baseURL + '/create_order')
 
-    const response = await this.queue.add(async () => {
+    const response = await this.queueCreateOrder.add(async () => {
       return await this.#fetch(url, {
         ...init,
         method: 'POST',

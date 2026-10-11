@@ -9,12 +9,10 @@
   [p-queue](https://github.com/sindresorhus/p-queue)
 - Удобная обработка ошибок
 - Полная типизация
-- Поддерживает GigaSPOT
 
 Официальная документация: [clore.ai/api-docs](https://clore.ai/api-docs)
 
-Официальная документация GigaSPOT:
-[gigaspot-api-docs.clore.ai](https://gigaspot-api-docs.clore.ai)
+Официальный журнал изменений: [clore.ai/changelog](https://clore.ai/changelog)
 
 ## Установка
 
@@ -126,7 +124,15 @@ await cloreai.cancelOrder({
 })
 ```
 
-### 10. create_order
+### 10. cancelOrders
+
+```typescript
+await cloreai.cancelOrders({
+  order_ids: [8383],
+})
+```
+
+### 11. create_order
 
 ```typescript
 await cloreai.createOrder({
@@ -139,72 +145,20 @@ await cloreai.createOrder({
   jupyter_token: 'JUPYTER_TOKEN',
   ssh_password: 'SSH_PASSWORD',
   required_price: 50,
-  remember_password: true,
+  remember_passwords: true,
 })
 ```
 
-### 11. poh_balance
+### 12. poh_balance
 
 ```typescript
 const pohBalance = await cloreai.pohBalance()
 ```
 
-### 12. renter_fees
+### 13. renter_fees
 
 ```typescript
 const renterFees = await cloreai.renterFees()
-```
-
-### GigaSPOT
-
-#### getGigaspot
-
-```typescript
-const gigaspot = await cloreai.gigaspot.getGigaspot()
-```
-
-#### createGigaspotOrders
-
-```typescript
-import { gigaspotBaseImages } from 'cloreai'
-
-await cloreai.gigaspot.createGigaspotOrders([
-  {
-    currency: 'CLORE-Blockchain',
-    image: gigaspotBaseImages.UBUNTU, // Use the base image constant
-    renting_server: 5941,
-    price: 50,
-    oc: [
-      {
-        pl: 150,
-      },
-    ],
-  },
-])
-```
-
-#### editGigaspotOrders
-
-```typescript
-await cloreai.gigaspot.editGigaspotOrders([
-  {
-    order_id: 58991,
-    price: 50,
-    oc: [
-      {
-        pl: 150,
-      },
-    ],
-  },
-])
-```
-
-#### cancelOrders
-
-```typescript
-await cloreai.gigaspot.cancelOrders({
-  order_ids: [8383],
-})
 ```
 
 ## Опции fetch

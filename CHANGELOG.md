@@ -1,3 +1,14 @@
+## 4.1.0
+
+- GigaSPOT has been completely removed. This is not a breaking change, as it had
+  been disabled and non-functional for several months.
+- A new method, `cancelOrders`, has been added (ported from GigaSPOT).
+- The `createOrder` method now uses a dedicated queue for requests (previously,
+  it used a shared queue by mistake).
+- All interfaces have been updated (partial GPU rental, etc.).
+- CloreaiError now passes options to the constructor of the Error class it
+  extends.
+
 ## 4.0.2
 
 - Class field `apiKey` are now public and can be changed at runtime.

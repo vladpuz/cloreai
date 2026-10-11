@@ -28,6 +28,28 @@ export interface Price {
   original_usd?: PricingInOriginalUsd
 }
 
+export interface Specs {
+  mb: string
+  cpu: string
+  cpus: string
+  ram: number
+  gpu: string
+  gpuram: number
+  disk: string
+  disk_speed: number
+  net: Net
+  backend_version: number
+  pcie_rev: number
+  pcie_width: number
+  update_channel: string
+  xfs?: number
+  stock_oc_override?: boolean
+  pl: number[]
+  gpus?: Gpu[]
+  stock_pl: number[]
+  stock_oc: Overclock[] | 'default'
+}
+
 export interface Net {
   cc: string
   down: number
@@ -50,36 +72,7 @@ export interface Overclock {
   mem_lock: number | null
 }
 
-export interface Specs {
-  mb: string
-  cpu: string
-  cpus: string
-  ram: number
-  gpu: string
-  gpuram: number
-  disk: string
-  disk_speed: number
-  net: Net
-  backend_version: number
-  pcie_rev: number
-  pcie_width: number
-  xfs?: number
-  stock_oc_override?: boolean
-  pl: number[]
-  gpus?: Gpu[]
-  stock_pl: number[]
-  stock_oc: Overclock[] | 'default'
-}
-
 export interface Rating {
   avg: number
   cnt: number
-}
-
-export interface GigaspotOverclock {
-  pl: number
-  core_offset?: number
-  mem_offset?: number
-  core_lock?: number
-  mem_lock?: number
 }

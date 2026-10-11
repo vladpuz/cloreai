@@ -12,11 +12,17 @@ export interface MarketplaceServer {
   price: Price
   rented: boolean
   specs: Specs
+  partial_gpu_rental: false | MarketplaceServerPartialGpuRental
   reliability: number
   allowed_coins: Currency[]
   rating: Rating
   gpu_array: string[]
-  gigaspot?: boolean
   oc?: boolean
   cuda_version: string
+}
+
+export interface MarketplaceServerPartialGpuRental {
+  total_gpus: number
+  available_gpus: number
+  free_indices: number[]
 }

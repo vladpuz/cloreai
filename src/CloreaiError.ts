@@ -16,7 +16,7 @@ export class CloreaiError extends Error {
   data?: unknown
 
   constructor(message?: string, options?: CloreaiErrorOptions) {
-    super(message)
+    super(message, options)
     this.name = 'CloreaiError'
     Object.assign(this, options)
   }
