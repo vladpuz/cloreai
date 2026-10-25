@@ -15,6 +15,7 @@ export interface SetServerSettingsRequestData {
   'enabled-bitcoin'?: boolean
   'autoprice'?: AutoPrice
   'usd_pricing'?: PricingInOriginalUsd
+  'auto_renew_allowed'?: boolean
 }
 
 export type SetServerSettingsResponseData = ResponseData

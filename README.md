@@ -103,6 +103,7 @@ await cloreai.setServerSettings({
     'USD-Blockchain': { on_demand: 1, spot: 1 },
     'bitcoin': { on_demand: 1, spot: 1 },
   },
+  'auto_renew_allowed': true,
 })
 ```
 
@@ -136,26 +137,45 @@ await cloreai.cancelOrders({
 
 ```typescript
 await cloreai.createOrder({
-  type: 'on-demand',
   currency: 'CLORE-Blockchain',
   image: 'cloreai/jupyter:ubuntu24.04-v2',
   renting_server: 5738,
+  type: 'on-demand',
   ports: { 22: 'tcp', 8888: 'http' },
   env: { SSH_PASSWORD: 'SSH_PASSWORD', JUPYTER_TOKEN: 'JUPYTER_TOKEN' },
   jupyter_token: 'JUPYTER_TOKEN',
   ssh_password: 'SSH_PASSWORD',
   required_price: 50,
-  remember_passwords: true,
+  remember_password: true,
+  auto_renew: true,
+  auto_renew_max_price: 50,
 })
 ```
 
-### 12. poh_balance
+### 12. set_order_auto_renew
+
+```typescript
+await cloreai.setOrderAutoRenew({
+  order_id: 38,
+  rental_hours: null,
+  auto_renew: true,
+  auto_renew_max_price: 300,
+})
+```
+
+### 13. order_renewals
+
+```typescript
+const orderRenewals = await cloreai.orderRenewals({ order_id: 38 })
+```
+
+### 14. poh_balance
 
 ```typescript
 const pohBalance = await cloreai.pohBalance()
 ```
 
-### 13. renter_fees
+### 15. renter_fees
 
 ```typescript
 const renterFees = await cloreai.renterFees()
@@ -175,9 +195,16 @@ const marketplace = await cloreai.marketplace({
 
 Use the `CloreaiError` class for error handling.
 
-Errors have fields with information `error.statusCode` and `error.description`.
+To check the error type based on its code, use the `statusCodes` constant.
 
-Use the constant `statusCodes` to check the error type.
+Errors include an `error.data` field, which contains the server
+response—including a code and a description of the error—and, in some cases,
+additional fields with further error details.
+
+This class only catches errors when a response has been successfully received,
+but the response code is not equal to `statusCodes.NORMAL` (0). Be sure to
+implement a pattern for propagating unknown exceptions (such as connection
+errors, etc.), as shown in the example below.
 
 ```typescript
 import { CloreaiError, statusCodes } from 'cloreai'
@@ -186,9 +213,9 @@ try {
   const marketplace = await cloreai.marketplace()
 } catch (error) {
   if (error instanceof CloreaiError) {
-    console.log(error.statusCode, error.description)
+    console.log('Error data:', error.data)
 
-    if (error.statusCode === statusCodes.EXCEEDED) {
+    if (error.data.code === statusCodes.EXCEEDED) {
       console.log('Rate limit exceeded error')
     }
   } else {

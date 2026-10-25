@@ -103,6 +103,7 @@ await cloreai.setServerSettings({
     'USD-Blockchain': { on_demand: 1, spot: 1 },
     'bitcoin': { on_demand: 1, spot: 1 },
   },
+  'auto_renew_allowed': true,
 })
 ```
 
@@ -136,26 +137,45 @@ await cloreai.cancelOrders({
 
 ```typescript
 await cloreai.createOrder({
-  type: 'on-demand',
   currency: 'CLORE-Blockchain',
   image: 'cloreai/jupyter:ubuntu24.04-v2',
   renting_server: 5738,
+  type: 'on-demand',
   ports: { 22: 'tcp', 8888: 'http' },
   env: { SSH_PASSWORD: 'SSH_PASSWORD', JUPYTER_TOKEN: 'JUPYTER_TOKEN' },
   jupyter_token: 'JUPYTER_TOKEN',
   ssh_password: 'SSH_PASSWORD',
   required_price: 50,
-  remember_passwords: true,
+  remember_password: true,
+  auto_renew: true,
+  auto_renew_max_price: 50,
 })
 ```
 
-### 12. poh_balance
+### 12. set_order_auto_renew
+
+```typescript
+await cloreai.setOrderAutoRenew({
+  order_id: 38,
+  rental_hours: null,
+  auto_renew: true,
+  auto_renew_max_price: 300,
+})
+```
+
+### 13. order_renewals
+
+```typescript
+const orderRenewals = await cloreai.orderRenewals({ order_id: 38 })
+```
+
+### 14. poh_balance
 
 ```typescript
 const pohBalance = await cloreai.pohBalance()
 ```
 
-### 13. renter_fees
+### 15. renter_fees
 
 ```typescript
 const renterFees = await cloreai.renterFees()
@@ -175,9 +195,16 @@ const marketplace = await cloreai.marketplace({
 
 Используйте класс `CloreaiError` для обработки ошибок.
 
-Ошибки имеют поля с информацией `error.statusCode` и `error.description`.
+Для проверки типа ошибки по коду используйте константу `statusCodes`.
 
-Для проверки типа ошибки используйте константу `statusCodes`.
+Ошибки имеют поле `error.data`, которое содержит ответ сервера с кодом,
+описанием ошибки и возможно, дополнительные поля с деталями ошибки в некоторых
+случаях.
+
+Этот класс перехватывает ошибки только когда ответ был успешно получен, но код
+ответа не равен `statusCodes.NORMAL` (0). Обязательно используйте паттерн
+проброса неизвестных исключений (например ошибки соединения и тд.) как в примере
+ниже.
 
 ```typescript
 import { CloreaiError, statusCodes } from 'cloreai'
@@ -186,9 +213,9 @@ try {
   const marketplace = await cloreai.marketplace()
 } catch (error) {
   if (error instanceof CloreaiError) {
-    console.log(error.statusCode, error.description)
+    console.log('Error data:', error.data)
 
-    if (error.statusCode === statusCodes.EXCEEDED) {
+    if (error.data.code === statusCodes.EXCEEDED) {
       console.log('Rate limit exceeded error')
     }
   } else {

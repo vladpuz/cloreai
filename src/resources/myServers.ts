@@ -15,6 +15,7 @@ export interface MyServersServer {
   init_token?: string
   specs: Specs
   allowed_currencies: Currency[]
+  auto_renew_allowed: boolean
   rented: boolean
   remaining_time: number
   rented_currency: Currency

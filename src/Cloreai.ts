@@ -1,4 +1,4 @@
-import PQueue, { type Options as PQueueOptions, type Queue, type QueueAddOptions } from 'p-queue'
+import PQueue, { type Options as QueueOptions } from 'p-queue'
 
 import type { CancelOrderRequestData, CancelOrderResponseData } from './resources/cancelOrder.ts'
 import type { CancelOrdersRequestData, CancelOrdersResponseData } from './resources/cancelOrders.ts'
@@ -6,16 +6,17 @@ import type { CreateOrderRequestData, CreateOrderResponseData } from './resource
 import type { MarketplaceResponseData } from './resources/marketplace.ts'
 import type { MyOrdersRequestParams, MyOrdersResponseData } from './resources/myOrders.ts'
 import type { MyServersResponseData } from './resources/myServers.ts'
+import type { OrderRenewalsRequestData, OrderRenewalsResponseData } from './resources/orderRenewals.ts'
 import type { PohBalanceResponseData } from './resources/pohBalance.ts'
 import type { RenterFeesResponseData } from './resources/renterFees.ts'
 import type { ServerConfigRequestData, ServerConfigResponseData } from './resources/serverConfig.ts'
+import type { SetOrderAutoRenewRequestData, SetOrderAutoRenewResponseData } from './resources/setOrderAutoRenew.ts'
 import type { SetServerSettingsRequestData, SetServerSettingsResponseData } from './resources/setServerSettings.ts'
 import type { SetSpotPriceRequestData, SetSpotPriceResponseData } from './resources/setSpotPrice.ts'
 import type { SpotMarketplaceRequestParams, SpotMarketplaceResponseData } from './resources/spotMarketplace.ts'
 import type { WalletsResponseData } from './resources/wallets.ts'
-import type { ResponseData } from './types.ts'
 
-import { CloreaiError } from './CloreaiError.ts'
+import { CloreaiError, type ErrorData } from './CloreaiError.ts'
 import { priorityLevels, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER, statusCodes } from './constants.ts'
 
 /* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
@@ -27,11 +28,6 @@ export interface Options {
   queueOptions?: QueueOptions
   queueCreateOrderOptions?: QueueOptions
 }
-
-export type QueueOptions = PQueueOptions<
-  Queue<() => Promise<unknown>, QueueAddOptions>,
-  QueueAddOptions
->
 
 class Cloreai {
   apiKey: string
@@ -62,7 +58,7 @@ class Cloreai {
     })
   }
 
-  async #fetch(input: string | URL, init: RequestInit = {}): Promise<Response> {
+  async #fetch(input: URL, init: RequestInit = {}): Promise<Response> {
     const headers = new Headers({
       'Content-Type': 'application/json',
       'auth': this.apiKey,
@@ -88,42 +84,14 @@ class Cloreai {
       signal,
     }
 
-    const url = new URL(input)
-    const request = new Request(url, mergedInit)
-    let response: Response
-
-    try {
-      response = await this.fetch(request)
-    } catch (error) {
-      throw new CloreaiError(
-        error instanceof Error ? error.message : String(error),
-        {
-          cause: error,
-          init: mergedInit,
-          request,
-        },
-      )
-    }
+    const request = new Request(input, mergedInit)
+    const response = await this.fetch(request)
 
     const originalJson = response.json
 
     // @ts-expect-error: json is readonly
     response.json = async () => {
-      let data: ResponseData
-
-      try {
-        data = await originalJson.call(response) as ResponseData
-      } catch (error) {
-        throw new CloreaiError(
-          error instanceof Error ? error.message : String(error),
-          {
-            cause: error,
-            init: mergedInit,
-            request,
-            response,
-          },
-        )
-      }
+      const data = await originalJson.call(response) as ErrorData
 
       if (data.code === statusCodes.NORMAL) {
         return data
@@ -135,11 +103,8 @@ class Cloreai {
         : `Code "${data.code}"`
 
       throw new CloreaiError(errorMessage, {
-        init: mergedInit,
         request,
         response,
-        statusCode: data.code,
-        description: data.error ?? '',
         data,
       })
     }
@@ -365,6 +330,46 @@ class Cloreai {
     })
 
     return await response.json() as CreateOrderResponseData
+  }
+
+  async setOrderAutoRenew(
+    data: SetOrderAutoRenewRequestData,
+    init: RequestInit = {},
+  ): Promise<SetOrderAutoRenewResponseData> {
+    const url = new URL(this.baseURL + '/set_order_auto_renew')
+
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as SetOrderAutoRenewResponseData
+  }
+
+  async orderRenewals(
+    data: OrderRenewalsRequestData,
+    init: RequestInit = {},
+  ): Promise<OrderRenewalsResponseData> {
+    const url = new URL(this.baseURL + '/order_renewals')
+
+    const response = await this.queue.add(async () => {
+      return await this.#fetch(url, {
+        ...init,
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    }, {
+      priority: priorityLevels.NORMAL,
+      signal: init.signal ?? undefined,
+    })
+
+    return await response.json() as OrderRenewalsResponseData
   }
 
   async pohBalance(

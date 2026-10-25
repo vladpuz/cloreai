@@ -15,6 +15,7 @@ export interface MarketplaceServer {
   partial_gpu_rental: false | MarketplaceServerPartialGpuRental
   reliability: number
   allowed_coins: Currency[]
+  auto_renew_allowed: boolean
   rating: Rating
   gpu_array: string[]
   oc?: boolean

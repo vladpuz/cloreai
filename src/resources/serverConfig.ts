@@ -21,6 +21,7 @@ export interface ServerConfig {
   id: number
   rental_status: number
   partial_rental_enabled: boolean
+  auto_renew_allowed: boolean
   specs: Specs
   background_job: ServerConfigBackgroundJob
   init_communication_token: string

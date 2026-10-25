@@ -1,23 +1,29 @@
+import type { ResponseData } from './types.ts'
+
+export interface ErrorData extends ResponseData {
+  max_step?: number
+  time_to_lowering?: number
+  min_price?: number
+  [key: string]: unknown
+}
+
 export interface CloreaiErrorOptions extends ErrorOptions {
-  init?: RequestInit
-  request?: Request
-  response?: Response
-  statusCode?: number
-  description?: string
-  data?: unknown
+  request: Request
+  response: Response
+  data: ErrorData
 }
 
 export class CloreaiError extends Error {
-  init?: RequestInit
-  request?: Request
-  response?: Response
-  statusCode?: number
-  description?: string
-  data?: unknown
+  request: Request
+  response: Response
+  data: ErrorData
 
-  constructor(message?: string, options?: CloreaiErrorOptions) {
+  constructor(message: string, options: CloreaiErrorOptions) {
     super(message, options)
     this.name = 'CloreaiError'
-    Object.assign(this, options)
+
+    this.request = options.request
+    this.response = options.response
+    this.data = options.data
   }
 }

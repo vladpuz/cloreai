@@ -26,6 +26,16 @@ export interface MyOrdersOrder {
   total_gpus: number
   gpu_array: string[]
   si: number
+  rental_hours: number
+  rental_end: number
+  term_start: number
+  term_end: number
+  term_mrl: number
+  last_renewal_at: number
+  auto_renew: boolean
+  auto_renew_max_price: number
+  renewals_count: number
+  ssh_auth: string
   my_past_rating?: number
   auto_login: string
   mon_container: number
@@ -41,4 +51,5 @@ export interface MyOrdersOrder {
   expired?: boolean
   paused?: boolean
   online: boolean
+  autossh: boolean
 }
