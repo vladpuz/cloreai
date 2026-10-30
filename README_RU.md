@@ -5,8 +5,6 @@
 Особенности:
 
 - Базируется на нативном fetch
-- Защищает от превышения rate limit (ошибки 429) через
-  [p-queue](https://github.com/sindresorhus/p-queue)
 - Удобная обработка ошибок
 - Полная типизация
 
@@ -31,8 +29,6 @@ const cloreai = new Cloreai('API_KEY', {
   baseURL: 'https://api.clore.ai/v1', // (optional) Override the default base URL for the API
   fetchOptions: {}, // (optional) Additional `RequestInit` options to be passed to `fetch` calls
   fetch: globalThis.fetch, // (optional) Specify a custom `fetch` function implementation
-  queueOptions: {}, // (optional) Queue instance options https://github.com/sindresorhus/p-queue
-  queueCreateOrderOptions: {}, // (optional) Create order queue instance options https://github.com/sindresorhus/p-queue
 })
 ```
 
@@ -226,36 +222,25 @@ try {
 
 ## Rate limit
 
-Все методы защищены от превышения rate limit через
-[p-queue](https://github.com/sindresorhus/p-queue), они автоматически
-задерживаются на нужное время, чтобы избежать превышения лимита.
-
-Значения rate limit по умолчанию доступны как константы:
+Для rate limit рекомендуется использовать
+[p-queue](https://github.com/sindresorhus/p-queue):
 
 ```typescript
-import { RATE_LIMIT, RATE_LIMIT_CREATE_ORDER } from 'cloreai'
+import PQueue from 'p-queue'
 
-console.log(RATE_LIMIT)
-console.log(RATE_LIMIT_CREATE_ORDER)
-```
+const queue = new PQueue({
+  interval: 2000, // 2 seconds
+  intervalCap: 1,
+  concurrency: 1,
+})
 
-Можно задать собственные значение rate limit для каждой очереди запросов:
-
-```typescript
-const cloreai = new Cloreai('API_KEY', {
-  queueOptions: {
-    interval: 2000, // For example 2 seconds
-  },
-  queueCreateOrderOptions: {
-    interval: 6000, // For example 6 seconds
-  },
+const marketplace = await queue.add(async () => {
+  return await cloreai.marketplace()
 })
 ```
 
-Доступ к экземплярам p-queue:
-
-- `cloreai.queue` - основная очередь запросов
-- `cloreai.queueCreateOrder` - очередь запросов createOrder
+Очередь автоматически задерживает выполнение на нужное время, чтобы избежать
+превышения лимита (ошибок 429). Рекомендуемая задержка 1-2 секунды.
 
 ## Retries
 

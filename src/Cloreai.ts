@@ -1,5 +1,3 @@
-import PQueue, { type Options as QueueOptions } from 'p-queue'
-
 import type { CancelOrderRequestData, CancelOrderResponseData } from './resources/cancelOrder.ts'
 import type { CancelOrdersRequestData, CancelOrdersResponseData } from './resources/cancelOrders.ts'
 import type { CreateOrderRequestData, CreateOrderResponseData } from './resources/createOrder.ts'
@@ -17,7 +15,7 @@ import type { SpotMarketplaceRequestParams, SpotMarketplaceResponseData } from '
 import type { WalletsResponseData } from './resources/wallets.ts'
 
 import { CloreaiError, type ErrorData } from './CloreaiError.ts'
-import { priorityLevels, RATE_LIMIT, RATE_LIMIT_CREATE_ORDER, statusCodes } from './constants.ts'
+import { statusCodes } from './constants.ts'
 
 /* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
 
@@ -25,8 +23,6 @@ export interface Options {
   baseURL?: string
   fetchOptions?: RequestInit
   fetch?: typeof fetch
-  queueOptions?: QueueOptions
-  queueCreateOrderOptions?: QueueOptions
 }
 
 class Cloreai {
@@ -34,28 +30,12 @@ class Cloreai {
   baseURL: string
   fetchOptions: RequestInit
   fetch: typeof fetch
-  queue: PQueue
-  queueCreateOrder: PQueue
 
   constructor(apiKey: string, options: Options = {}) {
     this.apiKey = apiKey
     this.baseURL = options.baseURL ?? 'https://api.clore.ai/v1'
     this.fetchOptions = options.fetchOptions ?? {}
     this.fetch = options.fetch ?? fetch
-
-    this.queue = new PQueue({
-      interval: RATE_LIMIT,
-      intervalCap: 1,
-      concurrency: 1,
-      ...options.queueOptions,
-    })
-
-    this.queueCreateOrder = new PQueue({
-      interval: RATE_LIMIT_CREATE_ORDER,
-      intervalCap: 1,
-      concurrency: 1,
-      ...options.queueCreateOrderOptions,
-    })
   }
 
   async #fetch(input: URL, init: RequestInit = {}): Promise<Response> {
@@ -117,14 +97,9 @@ class Cloreai {
   ): Promise<WalletsResponseData> {
     const url = new URL(this.baseURL + '/wallets')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'GET',
-      })
-    }, {
-      priority: priorityLevels.NORMAL,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'GET',
     })
 
     return await response.json() as WalletsResponseData
@@ -135,14 +110,9 @@ class Cloreai {
   ): Promise<MyServersResponseData> {
     const url = new URL(this.baseURL + '/my_servers')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'GET',
-      })
-    }, {
-      priority: priorityLevels.NORMAL,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'GET',
     })
 
     return await response.json() as MyServersResponseData
@@ -154,15 +124,10 @@ class Cloreai {
   ): Promise<ServerConfigResponseData> {
     const url = new URL(this.baseURL + '/server_config')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'GET',
-        body: JSON.stringify(data),
-      })
-    }, {
-      priority: priorityLevels.NORMAL,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'GET',
+      body: JSON.stringify(data),
     })
 
     return await response.json() as ServerConfigResponseData
@@ -173,14 +138,9 @@ class Cloreai {
   ): Promise<MarketplaceResponseData> {
     const url = new URL(this.baseURL + '/marketplace')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'GET',
-      })
-    }, {
-      priority: priorityLevels.NORMAL,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'GET',
     })
 
     return await response.json() as MarketplaceResponseData
@@ -196,14 +156,9 @@ class Cloreai {
       url.searchParams.set(key, String(value))
     }
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'GET',
-      })
-    }, {
-      priority: priorityLevels.NORMAL,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'GET',
     })
 
     return await response.json() as MyOrdersResponseData
@@ -219,14 +174,9 @@ class Cloreai {
       url.searchParams.set(key, String(value))
     }
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'GET',
-      })
-    }, {
-      priority: priorityLevels.NORMAL,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'GET',
     })
 
     return await response.json() as SpotMarketplaceResponseData
@@ -238,15 +188,10 @@ class Cloreai {
   ): Promise<SetServerSettingsResponseData> {
     const url = new URL(this.baseURL + '/set_server_settings')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
-    }, {
-      priority: priorityLevels.HIGH,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'POST',
+      body: JSON.stringify(data),
     })
 
     return await response.json() as SetServerSettingsResponseData
@@ -258,15 +203,10 @@ class Cloreai {
   ): Promise<SetSpotPriceResponseData> {
     const url = new URL(this.baseURL + '/set_spot_price')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
-    }, {
-      priority: priorityLevels.HIGH,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'POST',
+      body: JSON.stringify(data),
     })
 
     return await response.json() as SetSpotPriceResponseData
@@ -278,15 +218,10 @@ class Cloreai {
   ): Promise<CancelOrderResponseData> {
     const url = new URL(this.baseURL + '/cancel_order')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
-    }, {
-      priority: priorityLevels.HIGH,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'POST',
+      body: JSON.stringify(data),
     })
 
     return await response.json() as CancelOrderResponseData
@@ -298,15 +233,10 @@ class Cloreai {
   ): Promise<CancelOrdersResponseData> {
     const url = new URL(this.baseURL + '/cancel_orders')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
-    }, {
-      priority: priorityLevels.HIGH,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'POST',
+      body: JSON.stringify(data),
     })
 
     return await response.json() as CancelOrdersResponseData
@@ -318,15 +248,10 @@ class Cloreai {
   ): Promise<CreateOrderResponseData> {
     const url = new URL(this.baseURL + '/create_order')
 
-    const response = await this.queueCreateOrder.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
-    }, {
-      priority: priorityLevels.HIGHEST,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'POST',
+      body: JSON.stringify(data),
     })
 
     return await response.json() as CreateOrderResponseData
@@ -338,15 +263,10 @@ class Cloreai {
   ): Promise<SetOrderAutoRenewResponseData> {
     const url = new URL(this.baseURL + '/set_order_auto_renew')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
-    }, {
-      priority: priorityLevels.NORMAL,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'POST',
+      body: JSON.stringify(data),
     })
 
     return await response.json() as SetOrderAutoRenewResponseData
@@ -358,15 +278,10 @@ class Cloreai {
   ): Promise<OrderRenewalsResponseData> {
     const url = new URL(this.baseURL + '/order_renewals')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
-    }, {
-      priority: priorityLevels.NORMAL,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'POST',
+      body: JSON.stringify(data),
     })
 
     return await response.json() as OrderRenewalsResponseData
@@ -377,14 +292,9 @@ class Cloreai {
   ): Promise<PohBalanceResponseData> {
     const url = new URL(this.baseURL + '/poh_balance')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'GET',
-      })
-    }, {
-      priority: priorityLevels.NORMAL,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'GET',
     })
 
     return await response.json() as PohBalanceResponseData
@@ -395,14 +305,9 @@ class Cloreai {
   ): Promise<RenterFeesResponseData> {
     const url = new URL(this.baseURL + '/renter_fees')
 
-    const response = await this.queue.add(async () => {
-      return await this.#fetch(url, {
-        ...init,
-        method: 'GET',
-      })
-    }, {
-      priority: priorityLevels.NORMAL,
-      signal: init.signal ?? undefined,
+    const response = await this.#fetch(url, {
+      ...init,
+      method: 'GET',
     })
 
     return await response.json() as RenterFeesResponseData

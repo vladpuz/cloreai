@@ -5,8 +5,6 @@
 Features:
 
 - Based on native fetch
-- Protects against rate limit exceeded (429 errors) through
-  [p-queue](https://github.com/sindresorhus/p-queue)
 - Convenient error handling
 - Full type safety
 
@@ -31,8 +29,6 @@ const cloreai = new Cloreai('API_KEY', {
   baseURL: 'https://api.clore.ai/v1', // (optional) Override the default base URL for the API
   fetchOptions: {}, // (optional) Additional `RequestInit` options to be passed to `fetch` calls
   fetch: globalThis.fetch, // (optional) Specify a custom `fetch` function implementation
-  queueOptions: {}, // (optional) Queue instance options https://github.com/sindresorhus/p-queue
-  queueCreateOrderOptions: {}, // (optional) Create order queue instance options https://github.com/sindresorhus/p-queue
 })
 ```
 
@@ -226,36 +222,25 @@ try {
 
 ## Rate limit
 
-All methods are protected from rate limit exceeded through
-[p-queue](https://github.com/sindresorhus/p-queue), they automatically delay for
-the needed time to avoid exceeding the limit.
-
-Default rate limit values are available as constants:
+For rate limiting, it is recommended to use
+[p-queue](https://github.com/sindresorhus/p-queue):
 
 ```typescript
-import { RATE_LIMIT, RATE_LIMIT_CREATE_ORDER } from 'cloreai'
+import PQueue from 'p-queue'
 
-console.log(RATE_LIMIT)
-console.log(RATE_LIMIT_CREATE_ORDER)
-```
+const queue = new PQueue({
+  interval: 2000, // 2 seconds
+  intervalCap: 1,
+  concurrency: 1,
+})
 
-You can set your own rate limit values for each request queue:
-
-```typescript
-const cloreai = new Cloreai('API_KEY', {
-  queueOptions: {
-    interval: 2000, // For example 2 seconds
-  },
-  queueCreateOrderOptions: {
-    interval: 6000, // For example 6 seconds
-  },
+const marketplace = await queue.add(async () => {
+  return await cloreai.marketplace()
 })
 ```
 
-Access to p-queue instances:
-
-- `cloreai.queue` - main request queue
-- `cloreai.queueCreateOrder` - createOrder request queue
+The queue automatically delays execution for the required time to avoid
+exceeding the limit (error 429). The recommended delay is 1-2 seconds.
 
 ## Retries
 
